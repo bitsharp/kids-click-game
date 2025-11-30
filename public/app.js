@@ -15,9 +15,11 @@
   const LAST_CLICK_KEY = 'sunny_coins_last_click';
   const COMBO_KEY = 'sunny_coins_combo';
   const CLICKS_KEY = 'sunny_coins_clicks';
+  const REVOLVER_KEY = 'sunny_coins_revolver_owned';
   
   // Game state
   let balance = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+  let revolverOwned = localStorage.getItem(REVOLVER_KEY) === 'true';
   let totalEarned = parseInt(localStorage.getItem(TOTAL_EARNED_KEY) || '0', 10);
   let milestone1000Reached = localStorage.getItem(MILESTONE_1000_KEY) === 'true';
   let milestone2000Reached = localStorage.getItem(MILESTONE_2000_KEY) === 'true';
@@ -31,7 +33,8 @@
     { id: 'skin-flower', name: 'Flower Skin', price: 50 },
     { id: 'skin-sunglasses', name: 'Cool Glasses', price: 120 },
     { id: 'boost-2x', name: '2x Booster (1min)', price: 300 },
-    { id: 'skin-diamond', name: 'Diamond Skin (1000 coins)', price: 1000, premium: true }
+    { id: 'skin-diamond', name: 'Diamond Skin (1000 coins)', price: 1000, premium: true },
+    { id: 'skin-revolver', name: 'Revolver Gun (5000 coins)', price: 5000, premium: true, requiresDiamond: true }
   ];
 
   // Sound manager
@@ -79,6 +82,11 @@
     playSound(440, 0.08);
   }
 
+  function shootSound() {
+    playSound(200, 0.05);
+    setTimeout(() => playSound(180, 0.1), 30);
+  }
+
   // Game functions
   function renderBalance() { 
     coinEl.textContent = balance; 
@@ -93,6 +101,7 @@
     localStorage.setItem(LAST_CLICK_KEY, String(lastClickTime));
     localStorage.setItem(COMBO_KEY, String(combo));
     localStorage.setItem(CLICKS_KEY, String(totalClicks));
+    localStorage.setItem(REVOLVER_KEY, String(revolverOwned));
   }
 
   function showToast(text) { 
@@ -174,6 +183,42 @@
     createParticles(Math.min(n / 5, 20));
   }
 
+  function shootBullets() {
+    const container = document.getElementById('particles');
+    if (!container) return;
+    
+    shootSound();
+    
+    for (let i = 0; i < 8; i++) {
+      const bullet = document.createElement('div');
+      bullet.style.position = 'fixed';
+      bullet.style.left = '50%';
+      bullet.style.top = '50%';
+      bullet.style.width = '8px';
+      bullet.style.height = '8px';
+      bullet.style.background = '#FFD54A';
+      bullet.style.borderRadius = '50%';
+      bullet.style.boxShadow = '0 0 4px #ff9800, 0 0 8px #ff7043';
+      bullet.style.pointerEvents = 'none';
+      bullet.style.zIndex = '997';
+      
+      const angle = (Math.PI * 2 * i) / 8;
+      const velocity = 200;
+      const x = Math.cos(angle) * velocity;
+      const y = Math.sin(angle) * velocity;
+      
+      bullet.style.transition = 'all 600ms ease-out';
+      container.appendChild(bullet);
+      
+      setTimeout(() => {
+        bullet.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(0)`;
+        bullet.style.opacity = '0';
+      }, 20);
+      
+      setTimeout(() => bullet.remove(), 620);
+    }
+  }
+
   function createParticles(coinCount) {
     const container = document.getElementById('particles');
     if (!container) return;
@@ -246,7 +291,11 @@
   }
 
   collectBtn.addEventListener('click', () => {
-    buttonClickSound();
+    if (revolverOwned) {
+      shootBullets();
+    } else {
+      buttonClickSound();
+    }
     const baseCoins = 5 + Math.floor(Math.random() * 6);
     addCoins(baseCoins);
     
@@ -260,8 +309,10 @@
     items.forEach(it => {
       const div = document.createElement('div'); 
       div.className = 'item';
-      const isLocked = it.premium && balance < it.price;
-      div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${it.price} coins</div></div>`;
+      const requiresDiamondNotOwned = it.requiresDiamond && !milestone1000Reached;
+      const isLocked = (it.premium && balance < it.price) || requiresDiamondNotOwned;
+      const lockReason = requiresDiamondNotOwned ? '(Need Diamond)' : '';
+      div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${it.price} coins ${lockReason}</div></div>`;
       const btn = document.createElement('button');
       btn.textContent = isLocked ? '🔒 Locked' : 'Buy';
       btn.disabled = isLocked;
@@ -302,6 +353,36 @@
       if (!sun) return;
       sun.innerHTML = `<circle cx="50" cy="50" r="22" fill="#b8a6ff" stroke="#7c6be8" stroke-width="1"></circle><text x="50" y="56" text-anchor="middle" font-size="20" fill="#fff" font-weight="bold">◆</text>`;
     }
+    if (item.id === 'skin-revolver') {
+      revolverOwned = true;
+      save();
+      const sun = document.querySelector('.sun');
+      if (!sun) return;
+      sun.innerHTML = `<g transform="scale(0.75)">
+        <!-- Barrel -->
+        <rect x="45" y="42" width="35" height="8" rx="2" fill="#5a7c8f" stroke="#2d3e50" stroke-width="1.5"/>
+        <rect x="50" y="44" width="30" height="4" fill="#8fa4b8"/>
+        <!-- Cylinder -->
+        <circle cx="40" cy="50" r="12" fill="#8b6f47" stroke="#5c4b35" stroke-width="2"/>
+        <!-- Cylinder Details -->
+        <circle cx="35" cy="45" r="1.5" fill="#c0a080"/>
+        <circle cx="38" cy="42" r="1.5" fill="#c0a080"/>
+        <circle cx="42" cy="41" r="1.5" fill="#c0a080"/>
+        <circle cx="46" cy="42" r="1.5" fill="#c0a080"/>
+        <!-- Frame -->
+        <path d="M 40 62 Q 35 68 32 72 L 32 68 Q 35 62 40 62" fill="#8b6f47" stroke="#5c4b35" stroke-width="1.5"/>
+        <!-- Trigger Guard -->
+        <path d="M 35 58 L 35 65 Q 32 67 28 65" fill="none" stroke="#5a7c8f" stroke-width="2" stroke-linecap="round"/>
+        <!-- Trigger -->
+        <ellipse cx="33" cy="63" rx="3" ry="4" fill="#5c4b35" stroke="#3d2e23" stroke-width="1"/>
+        <!-- Hammer -->
+        <path d="M 50 35 L 52 32 L 54 35 Z" fill="#8b6f47" stroke="#5c4b35" stroke-width="1.5"/>
+        <!-- Sight -->
+        <rect x="68" y="40" width="2" height="6" fill="#5a7c8f" stroke="#2d3e50" stroke-width="1"/>
+      </g>`;
+      collectBtn.innerHTML = '<span class="tap-text">💥 SHOOT!</span><span id="tapCoins" class="tap-coins">+2</span>';
+      showToast('🔫 Revolver unlocked! Tap to shoot!');
+    }
     if (item.id === 'boost-2x') {
       showToast('2x booster active for 60s ⚡');
       const oldAdd = addCoins;
@@ -313,6 +394,36 @@
   window._app = { addCoins };
   renderBalance(); 
   renderItems();
-  if (milestone2000Reached) applyPokeBallSkin();
-  else if (milestone1000Reached) applySun1000Milestone();
+  if (revolverOwned) {
+    const sun = document.querySelector('.sun');
+    if (sun) {
+      sun.innerHTML = `<g transform="scale(0.75)">
+        <!-- Barrel -->
+        <rect x="45" y="42" width="35" height="8" rx="2" fill="#5a7c8f" stroke="#2d3e50" stroke-width="1.5"/>
+        <rect x="50" y="44" width="30" height="4" fill="#8fa4b8"/>
+        <!-- Cylinder -->
+        <circle cx="40" cy="50" r="12" fill="#8b6f47" stroke="#5c4b35" stroke-width="2"/>
+        <!-- Cylinder Details -->
+        <circle cx="35" cy="45" r="1.5" fill="#c0a080"/>
+        <circle cx="38" cy="42" r="1.5" fill="#c0a080"/>
+        <circle cx="42" cy="41" r="1.5" fill="#c0a080"/>
+        <circle cx="46" cy="42" r="1.5" fill="#c0a080"/>
+        <!-- Frame -->
+        <path d="M 40 62 Q 35 68 32 72 L 32 68 Q 35 62 40 62" fill="#8b6f47" stroke="#5c4b35" stroke-width="1.5"/>
+        <!-- Trigger Guard -->
+        <path d="M 35 58 L 35 65 Q 32 67 28 65" fill="none" stroke="#5a7c8f" stroke-width="2" stroke-linecap="round"/>
+        <!-- Trigger -->
+        <ellipse cx="33" cy="63" rx="3" ry="4" fill="#5c4b35" stroke="#3d2e23" stroke-width="1"/>
+        <!-- Hammer -->
+        <path d="M 50 35 L 52 32 L 54 35 Z" fill="#8b6f47" stroke="#5c4b35" stroke-width="1.5"/>
+        <!-- Sight -->
+        <rect x="68" y="40" width="2" height="6" fill="#5a7c8f" stroke="#2d3e50" stroke-width="1"/>
+      </g>`;
+    }
+    collectBtn.innerHTML = '<span class="tap-text">💥 SHOOT!</span><span id="tapCoins" class="tap-coins">+2</span>';
+  } else if (milestone2000Reached) {
+    applyPokeBallSkin();
+  } else if (milestone1000Reached) {
+    applySun1000Milestone();
+  }
 })();
