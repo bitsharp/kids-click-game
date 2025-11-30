@@ -28,7 +28,56 @@
 
   function addCoins(n){ balance += n; totalEarned += n; save(); renderBalance(); animateAdd(n); checkMilestone1000(); checkMilestone2000(); }
 
-  function animateAdd(n){ const el = document.createElement('div'); el.textContent = `+${n}`; el.style.position='absolute'; el.style.left='50%'; el.style.top='40%'; el.style.transform='translate(-50%,-50%)'; el.style.fontSize='22px'; el.style.color='#ff7043'; el.style.fontWeight='700'; el.style.pointerEvents='none'; document.body.appendChild(el); setTimeout(()=>el.style.transition='transform 700ms ease, opacity 700ms',50); setTimeout(()=>{ el.style.transform='translate(-50%, -260px)'; el.style.opacity='0'; },50); setTimeout(()=>el.remove(),900);
+  function animateAdd(n){ 
+    const el = document.createElement('div'); 
+    el.textContent = `+${n}`; 
+    el.style.position='fixed'; 
+    el.style.left='50%'; 
+    el.style.top='50%'; 
+    el.style.transform='translate(-50%,-50%)'; 
+    el.style.fontSize='32px'; 
+    el.style.color='#ff7043'; 
+    el.style.fontWeight='700'; 
+    el.style.pointerEvents='none';
+    el.style.textShadow='0 2px 8px rgba(0,0,0,0.2)';
+    el.style.zIndex='999';
+    document.body.appendChild(el); 
+    setTimeout(()=>el.style.transition='transform 800ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 800ms ease',50); 
+    setTimeout(()=>{ 
+      el.style.transform='translate(-50%, -300px) scale(0.5)'; 
+      el.style.opacity='0'; 
+    },50); 
+    setTimeout(()=>el.remove(),900);
+    createParticles(n);
+  }
+
+  function createParticles(coinCount){
+    const container = document.getElementById('particles');
+    if (!container) return;
+    for (let i = 0; i < coinCount; i++){
+      const particle = document.createElement('div');
+      particle.style.position='fixed';
+      particle.style.left='50%';
+      particle.style.top='50%';
+      particle.style.width='12px';
+      particle.style.height='12px';
+      particle.style.background='radial-gradient(circle at 30% 30%, #ffd54a, #ff9800)';
+      particle.style.borderRadius='50%';
+      particle.style.pointerEvents='none';
+      particle.style.boxShadow='0 2px 8px rgba(255,212,74,0.6)';
+      particle.style.zIndex='998';
+      const angle = (Math.PI * 2 * i) / coinCount;
+      const velocity = 120 + Math.random() * 100;
+      const x = Math.cos(angle) * velocity;
+      const y = Math.sin(angle) * velocity;
+      particle.style.transition='all 800ms cubic-bezier(0.25,0.46,0.45,0.94)';
+      container.appendChild(particle);
+      setTimeout(()=>{
+        particle.style.transform=`translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(0)`;
+        particle.style.opacity='0';
+      },20);
+      setTimeout(()=>particle.remove(),820);
+    }
   }
 
   function checkMilestone1000(){

@@ -9,25 +9,32 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="logo">Sunny Coins</div>
-    <div class="balance">Coins: <span id="coinCount">0</span></div>
+    <div class="logo">☀️ Sunny Coins</div>
+    <div class="balance"><span class="coin-icon">🪙</span> <span id="coinCount">0</span></div>
   </header>
+
+  <div class="particles" id="particles"></div>
 
   <main class="container">
     <section class="game">
       <div class="character" id="character">
+        <div class="glow-ring"></div>
         <svg viewBox="0 0 100 100" class="sun">
           <circle cx="50" cy="50" r="22" fill="#FFD54A"></circle>
         </svg>
       </div>
-      <button id="collectBtn" class="collect-btn">Tap Me! <span id="tapCoins">+2</span></button>
+      <div class="instructions">✨ Tap the sun to collect coins! ✨</div>
+      <button id="collectBtn" class="collect-btn">
+        <span class="tap-text">TAP ME!</span>
+        <span id="tapCoins" class="tap-coins">+2</span>
+      </button>
       <div class="message" id="message">Tap the sun to collect coins!</div>
     </section>
 
     <aside class="store">
-      <h2>Store</h2>
+      <h2>🏪 Store</h2>
       <div id="items" class="items"></div>
-      <button id="openShop" class="shop-btn">Open Shop</button>
+      <button id="openShop" class="shop-btn">🛍️ Open Shop</button>
     </aside>
   </main>
 
