@@ -22,6 +22,7 @@
   const tapCoinsEl = document.getElementById('tapCoins');
   const itemsEl = document.getElementById('items');
   const toast = document.getElementById('toast');
+  const resetBtn = document.getElementById('resetBtn');
 
   // Storage keys
   const STORAGE_KEY = 'sunny_coins_balance';
@@ -33,10 +34,12 @@
   const COMBO_KEY = 'sunny_coins_combo';
   const CLICKS_KEY = 'sunny_coins_clicks';
   const REVOLVER_KEY = 'sunny_coins_revolver_owned';
+  const PURCHASED_ITEMS_KEY = 'sunny_coins_purchased_items';
   
   // Game state
   let balance = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
   let revolverOwned = localStorage.getItem(REVOLVER_KEY) === 'true';
+  let purchasedItems = JSON.parse(localStorage.getItem(PURCHASED_ITEMS_KEY) || '[]');
   let totalEarned = parseInt(localStorage.getItem(TOTAL_EARNED_KEY) || '0', 10);
   let milestone1000Reached = localStorage.getItem(MILESTONE_1000_KEY) === 'true';
   let milestone2000Reached = localStorage.getItem(MILESTONE_2000_KEY) === 'true';
@@ -119,6 +122,7 @@
     localStorage.setItem(COMBO_KEY, String(combo));
     localStorage.setItem(CLICKS_KEY, String(totalClicks));
     localStorage.setItem(REVOLVER_KEY, String(revolverOwned));
+    localStorage.setItem(PURCHASED_ITEMS_KEY, JSON.stringify(purchasedItems));
   }
 
   function showToast(text) { 
@@ -329,9 +333,55 @@
     tapCoinsEl.textContent = `+${baseCoins}${combo > 1 ? `x${combo}` : ''}`;
   });
 
+  // Reset button
+  resetBtn.addEventListener('click', () => {
+    if (confirm('Are you sure you want to reset the game? All coins and skins will be lost!')) {
+      // Clear all localStorage
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(TOTAL_EARNED_KEY);
+      localStorage.removeItem(MILESTONE_1000_KEY);
+      localStorage.removeItem(MILESTONE_2000_KEY);
+      localStorage.removeItem(STREAK_KEY);
+      localStorage.removeItem(LAST_CLICK_KEY);
+      localStorage.removeItem(COMBO_KEY);
+      localStorage.removeItem(CLICKS_KEY);
+      localStorage.removeItem(REVOLVER_KEY);
+      localStorage.removeItem(PURCHASED_ITEMS_KEY);
+      
+      // Reset game state
+      balance = 0;
+      totalEarned = 0;
+      milestone1000Reached = false;
+      milestone2000Reached = false;
+      streak = 0;
+      lastClickTime = 0;
+      combo = 1;
+      totalClicks = 0;
+      revolverOwned = false;
+      purchasedItems = [];
+      
+      // Reset UI
+      renderBalance();
+      renderItems();
+      
+      // Reset sun skin to default
+      const sun = document.querySelector('.sun');
+      if (sun) {
+        sun.innerHTML = '<circle cx="50" cy="50" r="22" fill="#FFD54A"></circle>';
+      }
+      
+      showToast('Game reset! Starting fresh! 🎮');
+    }
+  });
+
   function renderItems() { 
     itemsEl.innerHTML = '';
     items.forEach(it => {
+      // Hide purchased items (don't show them in the store)
+      if (purchasedItems.includes(it.id)) {
+        return; // Skip this item, don't display it
+      }
+      
       const div = document.createElement('div'); 
       div.className = 'item';
       const requiresDiamondNotOwned = it.requiresDiamond && !milestone1000Reached;
@@ -339,10 +389,10 @@
       const lockReason = requiresDiamondNotOwned ? ' (Need Diamond)' : '';
       div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${it.price} coins${lockReason}</div></div>`;
       const btn = document.createElement('button');
-      btn.textContent = isLocked ? '🔒 Locked' : (it.id === 'skin-revolver' && revolverOwned ? '✅ Owned' : 'Buy');
-      btn.disabled = isLocked || (it.id === 'skin-revolver' && revolverOwned);
-      btn.style.opacity = isLocked || (it.id === 'skin-revolver' && revolverOwned) ? '0.5' : '1';
-      if (!isLocked && !(it.id === 'skin-revolver' && revolverOwned)) {
+      btn.textContent = isLocked ? '🔒 Locked' : 'Buy';
+      btn.disabled = isLocked;
+      btn.style.opacity = isLocked ? '0.5' : '1';
+      if (!isLocked) {
         btn.addEventListener('click', () => attemptBuy(it));
       }
       div.appendChild(btn);
@@ -378,6 +428,10 @@
           balance -= item.price;
           // Ensure balance never goes negative
           if (balance < 0) balance = 0;
+          // Mark item as purchased
+          if (!purchasedItems.includes(item.id)) {
+            purchasedItems.push(item.id);
+          }
           save(); 
           renderBalance(); 
           successSound(); 

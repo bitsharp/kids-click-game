@@ -31,6 +31,9 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
 .item button[disabled]{opacity:0.6;cursor:not-allowed}
 .shop-btn{margin-top:14px;padding:12px;width:100%;border-radius:12px;border:none;background:linear-gradient(135deg,#4dd0e1,#26c6da);color:#063544;font-weight:700;cursor:pointer;transition:all 0.2s ease;font-size:14px}
 .shop-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(77,208,225,0.3)}
+.reset-btn{margin-top:8px;padding:12px;width:100%;border-radius:12px;border:none;background:linear-gradient(135deg,#ff6b6b,#ee5a6f);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s ease;font-size:14px}
+.reset-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(255,107,107,0.3)}
+.reset-btn:active{transform:scale(0.98)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:28px;background:linear-gradient(135deg,rgba(33,48,58,0.95),rgba(44,62,80,0.95));color:#fff;padding:14px 20px;border-radius:12px;opacity:0;transition:all 0.3s ease;box-shadow:0 8px 24px rgba(0,0,0,0.2);font-weight:600;border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(10px);z-index:1000}
 .toast[style*="opacity: 1"]{animation:slideUp 0.3s ease}
 @media(max-width:800px){.container{flex-direction:column}.store{width:100%}.character{width:200px;height:200px}.collect-btn{padding:16px 32px;font-size:18px}}
