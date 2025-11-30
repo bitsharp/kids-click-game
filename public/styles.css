@@ -28,6 +28,9 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
 .item button{background:linear-gradient(135deg,#ffd54a,#ffb74d);border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;transition:all 0.2s ease;font-size:12px;touch-action:manipulation}
 .item button:hover:not([disabled]){transform:scale(1.05);box-shadow:0 4px 8px rgba(255,212,74,0.4)}
 .item button[disabled]{opacity:0.6;cursor:not-allowed}
+.challenge-boss-btn{margin-top:14px;padding:12px;width:100%;border-radius:12px;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s ease;font-size:14px;touch-action:manipulation}
+.challenge-boss-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(102,126,234,0.4)}
+.challenge-boss-btn:active{transform:scale(0.98)}
 .shop-btn{margin-top:14px;padding:12px;width:100%;border-radius:12px;border:none;background:linear-gradient(135deg,#4dd0e1,#26c6da);color:#063544;font-weight:700;cursor:pointer;transition:all 0.2s ease;font-size:14px;touch-action:manipulation}
 .shop-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(77,208,225,0.3)}
 .reset-btn{margin-top:8px;padding:12px;width:100%;border-radius:12px;border:none;background:linear-gradient(135deg,#ff6b6b,#ee5a6f);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s ease;font-size:14px;touch-action:manipulation}

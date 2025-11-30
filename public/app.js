@@ -40,6 +40,8 @@
   const PURCHASED_ITEMS_KEY = 'sunny_coins_purchased_items';
   const BOSS_WON_KEY = 'sunny_coins_boss_won_items';
   const WEAPON_KEY = 'sunny_coins_current_weapon';
+  const BOSS_LEVEL_KEY = 'sunny_coins_boss_level';
+  const HIGHEST_COIN_MILESTONE_KEY = 'sunny_coins_highest_milestone';
   
   // Game state
   let balance = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
@@ -54,15 +56,18 @@
   let lastClickTime = parseInt(localStorage.getItem(LAST_CLICK_KEY) || '0', 10);
   let combo = parseInt(localStorage.getItem(COMBO_KEY) || '1', 10);
   let totalClicks = parseInt(localStorage.getItem(CLICKS_KEY) || '0', 10);
+  let bossLevel = parseInt(localStorage.getItem(BOSS_LEVEL_KEY) || '0', 10);
+  let highestCoinMilestone = parseInt(localStorage.getItem(HIGHEST_COIN_MILESTONE_KEY) || '0', 10);
   let comboTimeout = null;
 
   const items = [
     { id: 'boost-2x', name: '2x Booster (1min)', price: 300 },
-    { id: 'skin-diamond', name: 'Diamond Skin (1000 coins)', price: 1000, premium: true },
-    { id: 'skin-revolver', name: 'Revolver Gun (5000 coins)', price: 5000, premium: true, requiresDiamond: true },
     { id: 'weapon-sword', name: '⚔️ Iron Sword', price: 5500, weapon: true, damage: 60 },
     { id: 'weapon-axe', name: '🪓 Battle Axe', price: 6200, weapon: true, damage: 85 },
-    { id: 'weapon-lance', name: '🔱 Holy Lance', price: 7500, weapon: true, damage: 110 }
+    { id: 'weapon-lance', name: '🔱 Holy Lance', price: 7500, weapon: true, damage: 110 },
+    { id: 'weapon-katana', name: '🗡️ Shadow Katana', price: 9000, weapon: true, damage: 140 },
+    { id: 'weapon-hammer', name: '🔨 Thunder Hammer', price: 11000, weapon: true, damage: 175 },
+    { id: 'weapon-bow', name: '🏹 Dragon Bow', price: 13500, weapon: true, damage: 215 }
   ];
 
   // Sound manager
@@ -120,22 +125,45 @@
   const closeBossBtn = document.getElementById('closeBossBtn');
   const attackBtn = document.getElementById('attackBtn');
   
-  const bosses = {
-    diamond: {
-      name: 'Shadow Guardian',
-      emoji: '👹',
-      maxHealth: 150,
-      reward: 1000,
-      difficulty: 'Medium'
-    },
-    revolver: {
-      name: 'Dark Phantom',
-      emoji: '💀',
-      maxHealth: 250,
-      reward: 5000,
-      difficulty: 'Hard'
-    }
-  };
+  const bossTemplates = [
+    { name: 'Shadow Guardian', emoji: '👹', baseHealth: 150, baseReward: 1000 },
+    { name: 'Dark Phantom', emoji: '💀', baseHealth: 150, baseReward: 1000 },
+    { name: 'Fire Dragon', emoji: '🐉', baseHealth: 150, baseReward: 1000 },
+    { name: 'Ice Demon', emoji: '😈', baseHealth: 150, baseReward: 1000 },
+    { name: 'Ancient Wyrm', emoji: '🐲', baseHealth: 150, baseReward: 1000 },
+    { name: 'Void Beast', emoji: '👾', baseHealth: 150, baseReward: 1000 },
+    { name: 'Storm Titan', emoji: '⚡', baseHealth: 150, baseReward: 1000 },
+    { name: 'Chaos Lord', emoji: '🔥', baseHealth: 150, baseReward: 1000 }
+  ];
+  
+  function getBossForLevel(level) {
+    const templateIndex = level % bossTemplates.length;
+    const template = bossTemplates[templateIndex];
+    const healthIncrease = Math.floor(level / bossTemplates.length) * 100;
+    const tier = Math.floor(level / bossTemplates.length) + 1;
+    
+    return {
+      name: `${template.name} (Tier ${tier})`,
+      emoji: template.emoji,
+      maxHealth: template.baseHealth + (level * 100) + healthIncrease,
+      reward: template.baseReward + (level * 500),
+      difficulty: level < 3 ? 'Easy' : level < 6 ? 'Medium' : level < 10 ? 'Hard' : 'Extreme',
+      level: level
+    };
+  }
+  
+  function isBossUnlocked(level) {
+    // Bosses unlock purely based on total coins earned (every 5000 coins)
+    const requiredMilestone = level * 5000;
+    return totalEarned >= requiredMilestone;
+  }
+  
+  function getNextBossUnlockRequirement() {
+    const nextLevel = bossLevel;
+    const requiredMilestone = nextLevel * 5000;
+    const coinsNeeded = Math.max(0, requiredMilestone - totalEarned);
+    return { requiredMilestone, coinsNeeded, isUnlocked: isBossUnlocked(nextLevel) };
+  }
   
   let currentBattle = null;
   let bossHealth = 0;
@@ -143,10 +171,22 @@
   let battleInProgress = false;
 
   function startBossBattle(bossType) {
-    const boss = bosses[bossType];
-    if (!boss) return;
+    // Check if boss is unlocked
+    if (!isBossUnlocked(bossLevel)) {
+      const requirement = getNextBossUnlockRequirement();
+      showToast(`🔒 Next boss unlocks at ${requirement.requiredMilestone} total coins! (${requirement.coinsNeeded} more needed)`);
+      return;
+    }
     
-    currentBattle = { type: bossType, ...boss };
+    // For legacy boss calls (diamond/revolver), use boss level system
+    let boss;
+    if (bossType === 'diamond' || bossType === 'revolver' || bossType === 'next') {
+      boss = getBossForLevel(bossLevel);
+    } else {
+      boss = getBossForLevel(bossLevel);
+    }
+    
+    currentBattle = { ...boss };
     bossHealth = boss.maxHealth;
     playerHealth = 100;
     battleInProgress = true;
@@ -281,17 +321,12 @@
       balance += currentBattle.reward;
       totalEarned += currentBattle.reward;
       
-      // Mark the skin as won (free to buy)
-      const skinId = currentBattle.type === 'diamond' ? 'skin-diamond' : 'skin-revolver';
-      if (!bossWonItems.includes(skinId)) {
-        bossWonItems.push(skinId);
-      }
+      // Increment boss level for infinite progression
+      bossLevel++;
+      localStorage.setItem(BOSS_LEVEL_KEY, bossLevel.toString());
       
-      // Unlock Diamond Skin milestone when beating Shadow Guardian
-      if (currentBattle.type === 'diamond' && !milestone1000Reached) {
-        milestone1000Reached = true;
-        localStorage.setItem(MILESTONE_1000_KEY, 'true');
-      }
+      // Update challenge boss button state
+      updateChallengeBossButton();
       
       save();
       renderBalance();
@@ -304,15 +339,33 @@
         bossModal.classList.remove('battle-active');
         bossModal.style.display = 'none';
         
-        // Show victory result modal
+        // Show victory result modal with next boss option
+        const nextBoss = getBossForLevel(bossLevel);
+        
         resultContent.innerHTML = `
           <div class="result-victory">🎉 VICTORY! 🎉</div>
           <div class="result-title">You defeated ${currentBattle.name}!</div>
           <div class="result-message">Excellent battle, warrior!</div>
           <div class="result-reward">+${currentBattle.reward} coins earned!</div>
-          <div class="result-message">A new skin is now available for free!</div>
+          <div class="next-boss-info">
+            <p style="margin: 15px 0 5px 0; font-weight: bold;">Next Challenge:</p>
+            <p style="margin: 5px 0;">${nextBoss.emoji} ${nextBoss.name}</p>
+            <p style="margin: 5px 0; font-size: 14px;">HP: ${nextBoss.maxHealth} | Reward: ${nextBoss.reward} coins</p>
+            <button id="nextBossBtn" class="next-boss-btn" style="margin-top: 15px; padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">⚔️ Fight Next Boss</button>
+          </div>
         `;
         battleResultModal.style.display = 'flex';
+        
+        // Add next boss button handler
+        setTimeout(() => {
+          const nextBossBtn = document.getElementById('nextBossBtn');
+          if (nextBossBtn) {
+            nextBossBtn.addEventListener('click', () => {
+              battleResultModal.style.display = 'none';
+              startBossBattle('next');
+            });
+          }
+        }, 100);
       }, 1000);
     } else {
       addBattleLog('💀 You were defeated... Try again!', 'defeat');
@@ -341,6 +394,35 @@
     bossModal.style.display = 'none';
     bossModal.classList.remove('battle-active');
   });
+  
+  const challengeBossBtn = document.getElementById('challengeBossBtn');
+  
+  function updateChallengeBossButton() {
+    if (!challengeBossBtn) return;
+    
+    const requirement = getNextBossUnlockRequirement();
+    const nextBoss = getBossForLevel(bossLevel);
+    
+    if (requirement.isUnlocked) {
+      challengeBossBtn.disabled = false;
+      challengeBossBtn.textContent = `⚔️ Challenge ${nextBoss.emoji} Boss #${bossLevel + 1}`;
+      challengeBossBtn.title = `Fight ${nextBoss.name}!`;
+      challengeBossBtn.style.opacity = '1';
+    } else {
+      challengeBossBtn.disabled = true;
+      challengeBossBtn.textContent = `🔒 Boss Locked`;
+      challengeBossBtn.title = `Reach ${requirement.requiredMilestone} total coins to unlock (${requirement.coinsNeeded} more needed)`;
+      challengeBossBtn.style.opacity = '0.6';
+    }
+  }
+  
+  if (challengeBossBtn) {
+    challengeBossBtn.addEventListener('click', () => {
+      startBossBattle('next');
+    });
+    // Initialize button state
+    updateChallengeBossButton();
+  }
 
   resultCloseBtn.addEventListener('click', () => {
     battleResultModal.style.display = 'none';
@@ -411,6 +493,7 @@
     coinSound(); 
     checkMilestones();
     checkRandomReward();
+    updateChallengeBossButton();
   }
 
   function checkRandomReward() {
@@ -534,6 +617,21 @@
       }
     });
 
+    // Check for boss unlock milestones (every 5000 coins)
+    const currentMilestone = Math.floor(totalEarned / 5000) * 5000;
+    if (currentMilestone > highestCoinMilestone) {
+      highestCoinMilestone = currentMilestone;
+      localStorage.setItem(HIGHEST_COIN_MILESTONE_KEY, highestCoinMilestone.toString());
+      
+      // Notify about boss unlock if conditions are met
+      if (currentMilestone > 0 && isBossUnlocked(bossLevel)) {
+        const nextBoss = getBossForLevel(bossLevel);
+        showToast(`⚔️ New boss unlocked: ${nextBoss.name}!`);
+        updateChallengeBossButton();
+        milestoneMet = true;
+      }
+    }
+
     if (!milestone1000Reached && totalEarned >= 1000) {
       milestone1000Reached = true;
       save();
@@ -603,6 +701,8 @@
       localStorage.removeItem(PURCHASED_ITEMS_KEY);
       localStorage.removeItem(BOSS_WON_KEY);
       localStorage.removeItem(WEAPON_KEY);
+      localStorage.removeItem(BOSS_LEVEL_KEY);
+      localStorage.removeItem(HIGHEST_COIN_MILESTONE_KEY);
       
       // Reset game state
       balance = 0;
@@ -617,10 +717,13 @@
       purchasedItems = [];
       bossWonItems = [];
       currentWeapon = 'fists';
+      bossLevel = 0;
+      highestCoinMilestone = 0;
       
       // Reset UI
       renderBalance();
       renderItems();
+      updateChallengeBossButton();
       
       // Reset sun skin to default
       const sun = document.querySelector('.sun');
@@ -645,7 +748,6 @@
       const requiresDiamondNotOwned = it.requiresDiamond && !milestone1000Reached;
       const isLocked = (it.premium && balance < it.price) || requiresDiamondNotOwned;
       const lockReason = requiresDiamondNotOwned ? ' (Need Diamond)' : '';
-      const isBossWon = bossWonItems.includes(it.id);
       const isWeapon = it.weapon;
       const isEquipped = isWeapon && currentWeapon === it.id;
       
@@ -660,20 +762,6 @@
         } else {
           btnText = isLocked ? '🔒 Locked' : 'Buy';
         }
-      } else if (it.id === 'skin-diamond') {
-        if (isBossWon) {
-          btnText = '🎁 FREE';
-          priceText = 'FREE!';
-        } else {
-          btnText = isLocked ? '🔒 Locked' : '⚔️ Battle Boss';
-        }
-      } else if (it.id === 'skin-revolver') {
-        if (isBossWon) {
-          btnText = '🎁 FREE';
-          priceText = 'FREE!';
-        } else {
-          btnText = isLocked ? '🔒 Locked' : '⚔️ Battle Boss';
-        }
       } else {
         btnText = isLocked ? '🔒 Locked' : 'Buy';
       }
@@ -681,9 +769,9 @@
       div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${priceText} coins${lockReason}</div></div>`;
       const btn = document.createElement('button');
       btn.textContent = btnText;
-      btn.disabled = (isLocked && !isBossWon) || isEquipped;
-      btn.style.opacity = ((isLocked && !isBossWon) || isEquipped) ? '0.5' : '1';
-      if (!isLocked || isBossWon || (isWeapon && purchasedItems.includes(it.id))) {
+      btn.disabled = isLocked || isEquipped;
+      btn.style.opacity = (isLocked || isEquipped) ? '0.5' : '1';
+      if (!isLocked || (isWeapon && purchasedItems.includes(it.id))) {
         btn.addEventListener('click', () => attemptBuy(it));
       }
       div.appendChild(btn);
@@ -701,34 +789,9 @@
       return;
     }
     
-    // For premium skins that haven't been won via boss battle, start a boss battle instead
-    if (item.id === 'skin-diamond' && !bossWonItems.includes('skin-diamond')) {
-      startBossBattle('diamond');
-      return;
-    }
-    if (item.id === 'skin-revolver' && !bossWonItems.includes('skin-revolver')) {
-      // Check if diamond battle has been won first
-      if (!bossWonItems.includes('skin-diamond')) {
-        showToast('⚔️ Defeat Shadow Guardian first!');
-        return;
-      }
-      startBossBattle('revolver');
-      return;
-    }
-    
-    // Handle boss-won free skins (0 coins needed)
-    const isBossWon = bossWonItems.includes(item.id);
-    const actualPrice = isBossWon ? 0 : item.price;
-    
     // STRICT validation: ensure we have enough coins BEFORE attempting purchase
-    if (balance < actualPrice) { 
+    if (balance < item.price) { 
       showToast('Not enough coins — keep playing!'); 
-      return; 
-    }
-    
-    const requiresDiamond = item.requiresDiamond && !milestone1000Reached;
-    if (requiresDiamond) { 
-      showToast('You need to unlock Diamond Skin first!'); 
       return; 
     }
     
@@ -736,15 +799,15 @@
       const res = await fetch('/api/purchase', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ itemId: item.id, price: actualPrice, currentBalance: balance }) 
+        body: JSON.stringify({ itemId: item.id, price: item.price, currentBalance: balance }) 
       });
       const data = await res.json();
       
       if (data && data.success) {
         // Double-check balance is still sufficient before deducting
-        if (balance >= actualPrice) {
+        if (balance >= item.price) {
           buttonClickSound();
-          balance -= actualPrice;
+          balance -= item.price;
           // Ensure balance never goes negative
           if (balance < 0) balance = 0;
           // Mark item as purchased
@@ -760,7 +823,7 @@
           save(); 
           renderBalance(); 
           successSound(); 
-          let message = isBossWon ? 'Skin acquired for free! 🎁' : 'Purchase successful! 🎁';
+          let message = 'Purchase successful! 🎁';
           if (item.weapon) {
             message = `${item.name} equipped! +${item.damage} damage!`;
           }
@@ -781,42 +844,6 @@
   }
 
   function applyItem(item) {
-    if (item.id === 'skin-flower') document.querySelector('.character').style.background = 'radial-gradient(circle at 30% 30%,#fff9f1,#ffcc80)';
-    if (item.id === 'skin-sunglasses') document.querySelector('.sun circle').setAttribute('fill', '#90caf9');
-    if (item.id === 'skin-diamond') {
-      const sun = document.querySelector('.sun');
-      if (!sun) return;
-      sun.innerHTML = `<circle cx="50" cy="50" r="22" fill="#b8a6ff" stroke="#7c6be8" stroke-width="1"></circle><text x="50" y="56" text-anchor="middle" font-size="20" fill="#fff" font-weight="bold">◆</text>`;
-    }
-    if (item.id === 'skin-revolver') {
-      revolverOwned = true;
-      save();
-      const sun = document.querySelector('.sun');
-      if (!sun) return;
-      sun.innerHTML = `<g transform="scale(0.75)">
-        <!-- Barrel -->
-        <rect x="45" y="42" width="35" height="8" rx="2" fill="#5a7c8f" stroke="#2d3e50" stroke-width="1.5"/>
-        <rect x="50" y="44" width="30" height="4" fill="#8fa4b8"/>
-        <!-- Cylinder -->
-        <circle cx="40" cy="50" r="12" fill="#8b6f47" stroke="#5c4b35" stroke-width="2"/>
-        <!-- Cylinder Details -->
-        <circle cx="35" cy="45" r="1.5" fill="#c0a080"/>
-        <circle cx="38" cy="42" r="1.5" fill="#c0a080"/>
-        <circle cx="42" cy="41" r="1.5" fill="#c0a080"/>
-        <circle cx="46" cy="42" r="1.5" fill="#c0a080"/>
-        <!-- Frame -->
-        <path d="M 40 62 Q 35 68 32 72 L 32 68 Q 35 62 40 62" fill="#8b6f47" stroke="#5c4b35" stroke-width="1.5"/>
-        <!-- Trigger Guard -->
-        <path d="M 35 58 L 35 65 Q 32 67 28 65" fill="none" stroke="#5a7c8f" stroke-width="2" stroke-linecap="round"/>
-        <!-- Trigger -->
-        <ellipse cx="33" cy="63" rx="3" ry="4" fill="#5c4b35" stroke="#3d2e23" stroke-width="1"/>
-        <!-- Hammer -->
-        <path d="M 50 35 L 52 32 L 54 35 Z" fill="#8b6f47" stroke="#5c4b35" stroke-width="1.5"/>
-        <!-- Sight -->
-        <rect x="68" y="40" width="2" height="6" fill="#5a7c8f" stroke="#2d3e50" stroke-width="1"/>
-      </g>`;
-      showToast('🔫 Revolver unlocked! Tap to shoot!');
-    }
     if (item.id === 'boost-2x') {
       showToast('2x booster active for 60s ⚡');
       const oldAdd = addCoins;
@@ -828,33 +855,7 @@
   window._app = { addCoins };
   renderBalance(); 
   renderItems();
-  if (revolverOwned) {
-    const sun = document.querySelector('.sun');
-    if (sun) {
-      sun.innerHTML = `<g transform="scale(0.75)">
-        <!-- Barrel -->
-        <rect x="45" y="42" width="35" height="8" rx="2" fill="#5a7c8f" stroke="#2d3e50" stroke-width="1.5"/>
-        <rect x="50" y="44" width="30" height="4" fill="#8fa4b8"/>
-        <!-- Cylinder -->
-        <circle cx="40" cy="50" r="12" fill="#8b6f47" stroke="#5c4b35" stroke-width="2"/>
-        <!-- Cylinder Details -->
-        <circle cx="35" cy="45" r="1.5" fill="#c0a080"/>
-        <circle cx="38" cy="42" r="1.5" fill="#c0a080"/>
-        <circle cx="42" cy="41" r="1.5" fill="#c0a080"/>
-        <circle cx="46" cy="42" r="1.5" fill="#c0a080"/>
-        <!-- Frame -->
-        <path d="M 40 62 Q 35 68 32 72 L 32 68 Q 35 62 40 62" fill="#8b6f47" stroke="#5c4b35" stroke-width="1.5"/>
-        <!-- Trigger Guard -->
-        <path d="M 35 58 L 35 65 Q 32 67 28 65" fill="none" stroke="#5a7c8f" stroke-width="2" stroke-linecap="round"/>
-        <!-- Trigger -->
-        <ellipse cx="33" cy="63" rx="3" ry="4" fill="#5c4b35" stroke="#3d2e23" stroke-width="1"/>
-        <!-- Hammer -->
-        <path d="M 50 35 L 52 32 L 54 35 Z" fill="#8b6f47" stroke="#5c4b35" stroke-width="1.5"/>
-        <!-- Sight -->
-        <rect x="68" y="40" width="2" height="6" fill="#5a7c8f" stroke="#2d3e50" stroke-width="1"/>
-      </g>`;
-    }
-  } else if (milestone2000Reached) {
+  if (milestone2000Reached) {
     applyPokeBallSkin();
   } else if (milestone1000Reached) {
     applySun1000Milestone();
