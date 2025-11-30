@@ -273,12 +273,14 @@
       { key: '5000', value: 5000, message: '👑 5000 coins! You\'re a legend!' },
     ];
 
+    let milestoneMet = false;
     milestones.forEach(m => {
       const storageKey = `milestone_${m.key}`;
       if (totalEarned >= m.value && !localStorage.getItem(storageKey)) {
         localStorage.setItem(storageKey, 'true');
         milestoneSound();
         showToast(m.message);
+        milestoneMet = true;
       }
     });
 
@@ -286,12 +288,18 @@
       milestone1000Reached = true;
       save();
       applySun1000Milestone();
+      milestoneMet = true;
     }
 
     if (!milestone2000Reached && totalEarned >= 2000) {
       milestone2000Reached = true;
       save();
       applyPokeBallSkin();
+      milestoneMet = true;
+    }
+
+    if (milestoneMet) {
+      renderItems();
     }
   }
 
@@ -328,32 +336,59 @@
       div.className = 'item';
       const requiresDiamondNotOwned = it.requiresDiamond && !milestone1000Reached;
       const isLocked = (it.premium && balance < it.price) || requiresDiamondNotOwned;
-      const lockReason = requiresDiamondNotOwned ? '(Need Diamond)' : '';
-      div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${it.price} coins ${lockReason}</div></div>`;
+      const lockReason = requiresDiamondNotOwned ? ' (Need Diamond)' : '';
+      div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${it.price} coins${lockReason}</div></div>`;
       const btn = document.createElement('button');
-      btn.textContent = isLocked ? '🔒 Locked' : 'Buy';
-      btn.disabled = isLocked;
-      btn.style.opacity = isLocked ? '0.5' : '1';
-      btn.addEventListener('click', () => attemptBuy(it));
+      btn.textContent = isLocked ? '🔒 Locked' : (it.id === 'skin-revolver' && revolverOwned ? '✅ Owned' : 'Buy');
+      btn.disabled = isLocked || (it.id === 'skin-revolver' && revolverOwned);
+      btn.style.opacity = isLocked || (it.id === 'skin-revolver' && revolverOwned) ? '0.5' : '1';
+      if (!isLocked && !(it.id === 'skin-revolver' && revolverOwned)) {
+        btn.addEventListener('click', () => attemptBuy(it));
+      }
       div.appendChild(btn);
       itemsEl.appendChild(div);
     })
   }
 
   async function attemptBuy(item) {
-    if (balance < item.price) { showToast('Not enough coins — keep playing!'); return; }
+    // STRICT validation: ensure we have enough coins BEFORE attempting purchase
+    if (balance < item.price) { 
+      showToast('Not enough coins — keep playing!'); 
+      return; 
+    }
+    
+    const requiresDiamond = item.requiresDiamond && !milestone1000Reached;
+    if (requiresDiamond) { 
+      showToast('You need to unlock Diamond Skin first!'); 
+      return; 
+    }
+    
     try {
-      const res = await fetch('/api/purchase', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: item.id, price: item.price }) });
+      const res = await fetch('/api/purchase', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ itemId: item.id, price: item.price, currentBalance: balance }) 
+      });
       const data = await res.json();
+      
       if (data && data.success) {
-        buttonClickSound();
-        balance -= item.price; 
-        save(); 
-        renderBalance(); 
-        successSound(); 
-        showToast('Purchase successful! 🎁'); 
-        applyItem(item); 
-        renderItems();
+        // Double-check balance is still sufficient before deducting
+        if (balance >= item.price) {
+          buttonClickSound();
+          balance -= item.price;
+          // Ensure balance never goes negative
+          if (balance < 0) balance = 0;
+          save(); 
+          renderBalance(); 
+          successSound(); 
+          showToast('Purchase successful! 🎁'); 
+          applyItem(item); 
+          renderItems();
+        } else {
+          // Edge case: balance changed between check and purchase
+          showToast('Balance changed. Please try again.');
+          renderBalance();
+        }
       } else {
         showToast('Purchase failed. Try again.');
       }
