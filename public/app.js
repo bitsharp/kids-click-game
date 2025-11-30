@@ -18,7 +18,6 @@
 
   const coinEl = document.getElementById('coinCount');
   const coinElMobile = document.getElementById('coinCountMobile');
-  const collectBtn = document.getElementById('collectBtn');
   const message = document.getElementById('message');
   const tapCoinsEl = document.getElementById('tapCoins');
   const itemsEl = document.getElementById('items');
@@ -58,14 +57,12 @@
   let comboTimeout = null;
 
   const items = [
-    { id: 'skin-flower', name: 'Flower Skin', price: 50 },
-    { id: 'skin-sunglasses', name: 'Cool Glasses', price: 120 },
     { id: 'boost-2x', name: '2x Booster (1min)', price: 300 },
     { id: 'skin-diamond', name: 'Diamond Skin (1000 coins)', price: 1000, premium: true },
     { id: 'skin-revolver', name: 'Revolver Gun (5000 coins)', price: 5000, premium: true, requiresDiamond: true },
-    { id: 'weapon-sword', name: '⚔️ Iron Sword', price: 500, weapon: true, damage: 60 },
-    { id: 'weapon-axe', name: '🪓 Battle Axe', price: 1200, weapon: true, damage: 85 },
-    { id: 'weapon-lance', name: '🔱 Holy Lance', price: 2500, weapon: true, damage: 110 }
+    { id: 'weapon-sword', name: '⚔️ Iron Sword', price: 5500, weapon: true, damage: 60 },
+    { id: 'weapon-axe', name: '🪓 Battle Axe', price: 6200, weapon: true, damage: 85 },
+    { id: 'weapon-lance', name: '🔱 Holy Lance', price: 7500, weapon: true, damage: 110 }
   ];
 
   // Sound manager
@@ -122,7 +119,6 @@
   const bossModal = document.getElementById('bossModal');
   const closeBossBtn = document.getElementById('closeBossBtn');
   const attackBtn = document.getElementById('attackBtn');
-  const battleLog = document.getElementById('battleLog');
   
   const bosses = {
     diamond: {
@@ -158,7 +154,6 @@
     document.getElementById('bossTitle').textContent = `⚔️ ${boss.name}`;
     document.getElementById('bossName').textContent = `Difficulty: ${boss.difficulty} | Reward: ${boss.reward} coins`;
     document.getElementById('bossCharacter').textContent = boss.emoji;
-    battleLog.innerHTML = '';
     addBattleLog(`${boss.name} appears! Choose your weapon!`, 'victory');
     
     // Show weapon selection
@@ -224,15 +219,9 @@
   }
 
   function addBattleLog(text, type = 'normal') {
-    const entry = document.createElement('div');
-    entry.className = 'battle-log-entry';
-    if (type === 'damage') entry.classList.add('battle-log-damage');
-    if (type === 'heal') entry.classList.add('battle-log-heal');
-    if (type === 'victory') entry.classList.add('battle-log-victory');
-    if (type === 'defeat') entry.classList.add('battle-log-defeat');
-    entry.textContent = text;
-    battleLog.appendChild(entry);
-    battleLog.scrollTop = battleLog.scrollHeight;
+    // Battle log element removed for UI simplicity
+    // This function is kept for code compatibility but does nothing
+    return;
   }
 
   function getWeaponDamage(weaponId = null) {
@@ -246,19 +235,12 @@
     if (!battleInProgress || !currentBattle) return;
     
     attackBtn.disabled = true;
-    attackBtn.textContent = '⏳ Boss attacking...';
+    attackBtn.textContent = '⏳ Attacking...';
     
     // Player attack with weapon
     const weaponInfo = getWeaponDamage();
     const playerDamage = weaponInfo.base + Math.floor(Math.random() * weaponInfo.max);
     bossHealth -= playerDamage;
-    document.getElementById('bossCharacter').style.animation = 'none';
-    setTimeout(() => {
-      document.getElementById('bossCharacter').style.animation = 'shake 0.5s ease';
-    }, 10);
-    document.getElementById('damageDisplay').textContent = `-${playerDamage} ⚡`;
-    document.getElementById('damageDisplay').style.color = '#4dd0e1';
-    setTimeout(() => document.getElementById('damageDisplay').textContent = '', 800);
     
     addBattleLog(`You dealt ${playerDamage} damage with ${weaponInfo.name}!`, 'damage');
     playSound(880, 0.15);
@@ -276,7 +258,6 @@
       
       const bossDamage = 15 + Math.floor(Math.random() * 25);
       playerHealth -= bossDamage;
-      document.getElementById('playerHealth').style.color = '#ff6b6b';
       addBattleLog(`${currentBattle.name} hit you for ${bossDamage} damage!`, 'damage');
       playSound(440, 0.2);
       
@@ -288,7 +269,6 @@
       updateBattleUI();
       attackBtn.disabled = false;
       attackBtn.textContent = '⚡ Attack';
-      document.getElementById('playerHealth').style.color = '#4dd0e1';
     }, 800);
   }
 
@@ -835,7 +815,6 @@
         <!-- Sight -->
         <rect x="68" y="40" width="2" height="6" fill="#5a7c8f" stroke="#2d3e50" stroke-width="1"/>
       </g>`;
-      collectBtn.innerHTML = '<span class="tap-text">💥 SHOOT!</span><span id="tapCoins" class="tap-coins">+2</span>';
       showToast('🔫 Revolver unlocked! Tap to shoot!');
     }
     if (item.id === 'boost-2x') {
@@ -875,7 +854,6 @@
         <rect x="68" y="40" width="2" height="6" fill="#5a7c8f" stroke="#2d3e50" stroke-width="1"/>
       </g>`;
     }
-    collectBtn.innerHTML = '<span class="tap-text">💥 SHOOT!</span><span id="tapCoins" class="tap-coins">+2</span>';
   } else if (milestone2000Reached) {
     applyPokeBallSkin();
   } else if (milestone1000Reached) {
