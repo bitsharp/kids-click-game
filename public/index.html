@@ -17,6 +17,12 @@
 
   <main class="container">
     <section class="game">
+      <div class="coin-display-mobile">
+        <div class="mobile-coin-info">
+          <span class="coin-icon">🪙</span>
+          <span id="coinCountMobile">0</span>
+        </div>
+      </div>
       <div class="character" id="character">
         <div class="glow-ring"></div>
         <svg viewBox="0 0 100 100" class="sun">
@@ -24,7 +30,7 @@
         </svg>
       </div>
       <div class="instructions">✨ Tap the sun to collect coins! ✨</div>
-      <button id="collectBtn" class="collect-btn">
+      <button id="collectBtn" class="collect-btn" style="pointer-events: auto; touch-action: manipulation;">
         <span class="tap-text">TAP ME!</span>
         <span id="tapCoins" class="tap-coins">+2</span>
       </button>

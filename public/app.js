@@ -17,6 +17,7 @@
   }, { passive: false });
 
   const coinEl = document.getElementById('coinCount');
+  const coinElMobile = document.getElementById('coinCountMobile');
   const collectBtn = document.getElementById('collectBtn');
   const message = document.getElementById('message');
   const tapCoinsEl = document.getElementById('tapCoins');
@@ -277,7 +278,8 @@
 
   // Game functions
   function renderBalance() { 
-    coinEl.textContent = balance; 
+    coinEl.textContent = balance;
+    if (coinElMobile) coinElMobile.textContent = balance;
   }
 
   function save() { 
@@ -332,6 +334,7 @@
     totalClicks++;
     save(); 
     renderBalance(); 
+    renderItems();
     animateAdd(finalCoins); 
     coinSound(); 
     checkMilestones();
@@ -348,6 +351,7 @@
       successSound();
       save();
       renderBalance();
+      renderItems();
     }
   }
 
