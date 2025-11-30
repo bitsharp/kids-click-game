@@ -585,7 +585,9 @@
     sun.innerHTML = `<g><circle cx="50" cy="50" r="22" fill="#e63946" stroke="#000" stroke-width="1.5"></circle><circle cx="50" cy="27" r="22" fill="#f1faee" stroke="#000" stroke-width="1.5"></circle><circle cx="50" cy="50" r="6" fill="#000"></circle><line x1="28" y1="50" x2="72" y2="50" stroke="#000" stroke-width="1.5"></line></g>`;
   }
 
-  collectBtn.addEventListener('click', () => {
+  const character = document.getElementById('character');
+  
+  character.addEventListener('click', () => {
     if (revolverOwned) {
       shootBullets();
     } else {
@@ -596,7 +598,13 @@
     
     const messages = [`Nice! 👍`, `Great! 🎉`, `You got coins! 💰`, `Yay! 🌟`, `Awesome! 🚀`, `Keep going! 💪`];
     message.textContent = messages[Math.floor(Math.random() * messages.length)];
+    
+    // Show tap feedback
     tapCoinsEl.textContent = `+${baseCoins}${combo > 1 ? `x${combo}` : ''}`;
+    tapCoinsEl.style.opacity = '1';
+    setTimeout(() => {
+      tapCoinsEl.style.opacity = '0';
+    }, 800);
   });
 
   // Reset button
