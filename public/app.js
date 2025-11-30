@@ -24,6 +24,9 @@
   const itemsEl = document.getElementById('items');
   const toast = document.getElementById('toast');
   const resetBtn = document.getElementById('resetBtn');
+  const battleResultModal = document.getElementById('battleResultModal');
+  const resultContent = document.getElementById('resultContent');
+  const resultCloseBtn = document.getElementById('resultCloseBtn');
 
   // Storage keys
   const STORAGE_KEY = 'sunny_coins_balance';
@@ -152,12 +155,18 @@
     playerHealth = 100;
     battleInProgress = true;
     
-    document.getElementById('bossName').textContent = boss.name + ` (${boss.difficulty})`;
+    document.getElementById('bossTitle').textContent = `⚔️ ${boss.name}`;
+    document.getElementById('bossName').textContent = `Difficulty: ${boss.difficulty} | Reward: ${boss.reward} coins`;
     document.getElementById('bossCharacter').textContent = boss.emoji;
     battleLog.innerHTML = '';
-    addBattleLog(`${boss.name} appears!`, 'victory');
+    addBattleLog(`${boss.name} appears! Prepare for battle!`, 'victory');
+    const weaponInfo = getWeaponDamage();
+    addBattleLog(`Equipped: ${weaponInfo.name}`, 'normal');
     
     bossModal.style.display = 'flex';
+    bossModal.classList.add('battle-active');
+    attackBtn.disabled = false;
+    attackBtn.textContent = '⚡ Attack';
     updateBattleUI();
   }
 
@@ -191,12 +200,18 @@
     if (!battleInProgress || !currentBattle) return;
     
     attackBtn.disabled = true;
+    attackBtn.textContent = '⏳ Boss attacking...';
     
     // Player attack with weapon
     const weaponInfo = getWeaponDamage();
     const playerDamage = weaponInfo.base + Math.floor(Math.random() * weaponInfo.max);
     bossHealth -= playerDamage;
-    document.getElementById('damageDisplay').textContent = `-${playerDamage}`;
+    document.getElementById('bossCharacter').style.animation = 'none';
+    setTimeout(() => {
+      document.getElementById('bossCharacter').style.animation = 'shake 0.5s ease';
+    }, 10);
+    document.getElementById('damageDisplay').textContent = `-${playerDamage} ⚡`;
+    document.getElementById('damageDisplay').style.color = '#4dd0e1';
     setTimeout(() => document.getElementById('damageDisplay').textContent = '', 800);
     
     addBattleLog(`You dealt ${playerDamage} damage with ${weaponInfo.name}!`, 'damage');
@@ -215,6 +230,7 @@
       
       const bossDamage = 15 + Math.floor(Math.random() * 25);
       playerHealth -= bossDamage;
+      document.getElementById('playerHealth').style.color = '#ff6b6b';
       addBattleLog(`${currentBattle.name} hit you for ${bossDamage} damage!`, 'damage');
       playSound(440, 0.2);
       
@@ -225,6 +241,8 @@
       
       updateBattleUI();
       attackBtn.disabled = false;
+      attackBtn.textContent = '⚡ Attack';
+      document.getElementById('playerHealth').style.color = '#4dd0e1';
     }, 800);
   }
 
@@ -233,7 +251,7 @@
     attackBtn.disabled = true;
     
     if (victory) {
-      addBattleLog(`Victory! You earned ${currentBattle.reward} coins!`, 'victory');
+      addBattleLog(`🎉 VICTORY! Earned ${currentBattle.reward} coins!`, 'victory');
       balance += currentBattle.reward;
       totalEarned += currentBattle.reward;
       
@@ -254,16 +272,39 @@
       renderItems(); // Update store to show free skin
       milestoneSound();
       checkMilestones();
+      
       setTimeout(() => {
+        // Close battle modal
+        bossModal.classList.remove('battle-active');
         bossModal.style.display = 'none';
-        showToast(`Boss defeated! +${currentBattle.reward} coins! Skin is FREE! 🎉`);
-      }, 1500);
+        
+        // Show victory result modal
+        resultContent.innerHTML = `
+          <div class="result-victory">🎉 VICTORY! 🎉</div>
+          <div class="result-title">You defeated ${currentBattle.name}!</div>
+          <div class="result-message">Excellent battle, warrior!</div>
+          <div class="result-reward">+${currentBattle.reward} coins earned!</div>
+          <div class="result-message">A new skin is now available for free!</div>
+        `;
+        battleResultModal.style.display = 'flex';
+      }, 1000);
     } else {
-      addBattleLog('You were defeated... Try again!', 'defeat');
+      addBattleLog('💀 You were defeated... Try again!', 'defeat');
       playSound(200, 0.3);
+      
       setTimeout(() => {
-        attackBtn.disabled = false;
-        // Allow retry
+        // Close battle modal
+        bossModal.classList.remove('battle-active');
+        bossModal.style.display = 'none';
+        
+        // Show defeat result modal
+        resultContent.innerHTML = `
+          <div class="result-defeat">💀 DEFEATED! 💀</div>
+          <div class="result-title">You lost this battle!</div>
+          <div class="result-message">Don't worry! Collect more coins and try again.</div>
+          <div class="result-message">Train harder and upgrade your weapons!</div>
+        `;
+        battleResultModal.style.display = 'flex';
       }, 800);
     }
   }
@@ -272,6 +313,11 @@
     battleInProgress = false;
     attackBtn.disabled = false;
     bossModal.style.display = 'none';
+    bossModal.classList.remove('battle-active');
+  });
+
+  resultCloseBtn.addEventListener('click', () => {
+    battleResultModal.style.display = 'none';
   });
 
   attackBtn.addEventListener('click', performAttack);
@@ -627,6 +673,11 @@
       return;
     }
     if (item.id === 'skin-revolver' && !bossWonItems.includes('skin-revolver')) {
+      // Check if diamond battle has been won first
+      if (!bossWonItems.includes('skin-diamond')) {
+        showToast('⚔️ Defeat Shadow Guardian first!');
+        return;
+      }
       startBossBattle('revolver');
       return;
     }

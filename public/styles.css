@@ -65,55 +65,92 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
 
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
-.boss-container{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border-radius:20px;padding:30px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:2px solid #e94560}
+.boss-modal.battle-active{animation:battlePulse 0.5s ease}
 
-.boss-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+@keyframes battlePulse{0%{background:rgba(0,0,0,0.85)}50%{background:rgba(255,107,107,0.1)}100%{background:rgba(0,0,0,0.85)}}
 
-.boss-header h2{margin:0;color:#ff6b6b;font-size:28px;text-shadow:0 0 10px rgba(255,107,107,0.5)}
+.boss-container{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border-radius:20px;padding:30px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:3px solid #e94560;position:relative;overflow:hidden}
 
-.close-btn{background:none;border:none;color:#ff6b6b;font-size:28px;cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+.boss-container::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 50% 0%,rgba(255,107,107,0.1),transparent);pointer-events:none;z-index:0}
 
-.close-btn:hover{transform:scale(1.2)}
+.boss-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;position:relative;z-index:2}
 
-.boss-content{background:rgba(0,0,0,0.4);padding:20px;border-radius:12px;margin-bottom:20px}
+.boss-header h2{margin:0;color:#ff6b6b;font-size:28px;text-shadow:0 0 15px rgba(255,107,107,0.6);animation:pulse 1s ease-in-out infinite}
 
-.boss-character{font-size:80px;text-align:center;margin-bottom:15px;animation:shake 0.5s ease infinite}
+.close-btn{background:none;border:none;color:#ff6b6b;font-size:28px;cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease}
 
-.boss-info{margin-bottom:15px}
+.close-btn:hover{transform:scale(1.2);text-shadow:0 0 8px rgba(255,107,107,0.8)}
 
-.boss-name{font-size:20px;font-weight:700;color:#ff6b6b;margin-bottom:8px}
+.boss-content{background:rgba(0,0,0,0.5);padding:25px;border-radius:12px;margin-bottom:20px;border:2px solid rgba(255,107,107,0.2);position:relative;z-index:2}
 
-.boss-health-bar{height:20px;background:rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;border:2px solid #ff6b6b}
+.boss-character{font-size:100px;text-align:center;margin-bottom:20px;animation:shake 0.5s ease infinite;text-shadow:0 4px 12px rgba(0,0,0,0.5);filter:drop-shadow(0 0 8px rgba(255,107,107,0.3))}
 
-.boss-health-fill{height:100%;background:linear-gradient(90deg,#ff6b6b,#ee5a6f);width:100%;transition:width 0.3s ease}
+.boss-info{margin-bottom:20px}
 
-.boss-stats{color:#aaa;font-size:14px;margin-top:6px}
+.boss-name{font-size:16px;font-weight:700;color:#ffd700;margin-bottom:12px;text-shadow:0 0 8px rgba(255,215,0,0.3)}
 
-.player-info{color:#4dd0e1;font-size:14px;margin-top:15px}
+.boss-health-bar{height:24px;background:rgba(0,0,0,0.5);border-radius:12px;overflow:hidden;border:2px solid #ff6b6b;box-shadow:0 0 8px rgba(255,107,107,0.4)}
 
-.player-health-bar{height:16px;background:rgba(255,255,255,0.1);border-radius:8px;overflow:hidden;margin-top:6px;border:2px solid #4dd0e1}
+.boss-health-fill{height:100%;background:linear-gradient(90deg,#ff6b6b,#ee5a6f);width:100%;transition:width 0.3s ease;box-shadow:inset 0 0 8px rgba(255,255,255,0.2)}
 
-.player-health-fill{height:100%;background:linear-gradient(90deg,#4dd0e1,#26c6da);width:100%;transition:width 0.3s ease}
+.boss-stats{color:#4dd0e1;font-size:13px;margin-top:8px;font-weight:600;text-shadow:0 0 4px rgba(77,208,225,0.3)}
 
-.battle-actions{text-align:center;margin-bottom:15px}
+.player-info{background:rgba(77,208,225,0.1);padding:12px;border-radius:8px;border:2px solid rgba(77,208,225,0.2);font-weight:600}
 
-.attack-btn{background:linear-gradient(135deg,#ff6b6b,#ee5a6f);color:white;border:none;padding:16px 32px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s ease;box-shadow:0 4px 15px rgba(255,107,107,0.3)}
+.player-info div:first-child{color:#4dd0e1;font-size:14px;margin-bottom:8px}
 
-.attack-btn:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(255,107,107,0.5)}
+.player-health-bar{height:20px;background:rgba(0,0,0,0.4);border-radius:10px;overflow:hidden;margin-top:6px;border:2px solid #4dd0e1;box-shadow:0 0 8px rgba(77,208,225,0.4)}
 
-.attack-btn:active{transform:scale(0.95)}
+.player-health-fill{height:100%;background:linear-gradient(90deg,#4dd0e1,#26c6da);width:100%;transition:width 0.3s ease;box-shadow:inset 0 0 8px rgba(255,255,255,0.2)}
 
-.damage-display{font-size:24px;font-weight:700;color:#4dd0e1;height:30px;text-shadow:0 0 10px rgba(77,208,225,0.5)}
+.battle-actions{text-align:center;margin-bottom:15px;position:relative;z-index:2}
 
-.battle-log{background:rgba(0,0,0,0.3);padding:12px;border-radius:8px;max-height:120px;overflow-y:auto;font-size:12px;color:#aaa;line-height:1.4}
+.attack-btn{background:linear-gradient(135deg,#ff6b6b,#ee5a6f);color:white;border:none;padding:16px 32px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s ease;box-shadow:0 6px 20px rgba(255,107,107,0.4);text-shadow:0 1px 3px rgba(0,0,0,0.3);width:100%;position:relative;z-index:2}
 
-.battle-log-entry{margin:4px 0;animation:slideUp 0.3s ease}
+.attack-btn:hover:not([disabled]){transform:translateY(-2px);box-shadow:0 8px 25px rgba(255,107,107,0.6)}
 
-.battle-log-damage{color:#ff6b6b}
+.attack-btn:active:not([disabled]){transform:translateY(0) scale(0.98)}
 
-.battle-log-heal{color:#4dd0e1}
+.attack-btn[disabled]{opacity:0.6;cursor:not-allowed;background:linear-gradient(135deg,#888,#666)}
 
-.battle-log-victory{color:#81c784;font-weight:700}
+.damage-display{font-size:32px;font-weight:700;color:#4dd0e1;height:40px;text-shadow:0 0 15px rgba(77,208,225,0.7);animation:slideUp 0.3s ease;font-family:'Courier New',monospace}
 
-.battle-log-defeat{color:#ff6b6b;font-weight:700}
+.battle-log{background:rgba(0,0,0,0.6);padding:14px;border-radius:8px;max-height:140px;overflow-y:auto;font-size:13px;color:#aaa;line-height:1.5;border:1px solid rgba(255,255,255,0.1);position:relative;z-index:2}
+
+.battle-log-entry{margin:5px 0;animation:slideUp 0.3s ease;padding:2px 0}
+
+.battle-log-damage{color:#ff9999;font-weight:600}
+
+.battle-log-heal{color:#81c784}
+
+.battle-log-victory{color:#81c784;font-weight:700;text-shadow:0 0 8px rgba(129,199,132,0.5)}
+
+.battle-log-defeat{color:#ff6b6b;font-weight:700;text-shadow:0 0 8px rgba(255,107,107,0.5)}
+
+/* Battle Result Modal */
+.battle-result-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;animation:fadeIn 0.3s ease}
+
+.battle-result-container{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border-radius:20px;padding:50px 40px;max-width:500px;width:90%;box-shadow:0 30px 80px rgba(0,0,0,0.7);border:3px solid #e94560;position:relative;text-align:center;animation:scaleIn 0.5s cubic-bezier(0.68,-0.55,0.265,1.55)}
+
+@keyframes scaleIn{from{transform:scale(0.3);opacity:0}to{transform:scale(1);opacity:1}}
+
+#resultContent{margin-bottom:30px}
+
+.result-victory{color:#81c784;font-size:48px;margin-bottom:20px;text-shadow:0 0 20px rgba(129,199,132,0.6);animation:bounce 0.6s ease infinite}
+
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+.result-defeat{color:#ff6b6b;font-size:48px;margin-bottom:20px;text-shadow:0 0 20px rgba(255,107,107,0.6);animation:shake 0.5s ease infinite}
+
+.result-title{font-size:32px;font-weight:700;color:#fff;margin-bottom:15px;text-shadow:0 2px 8px rgba(0,0,0,0.5)}
+
+.result-message{font-size:18px;color:#aaa;line-height:1.6;margin-bottom:20px}
+
+.result-reward{font-size:20px;font-weight:700;color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,0.5);margin:15px 0}
+
+.result-close-btn{background:linear-gradient(135deg,#4dd0e1,#26c6da);color:#063544;border:none;padding:14px 40px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s ease;box-shadow:0 6px 20px rgba(77,208,225,0.4);width:100%;text-transform:uppercase;letter-spacing:1px}
+
+.result-close-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(77,208,225,0.6)}
+
+.result-close-btn:active{transform:translateY(0) scale(0.98)}
 
