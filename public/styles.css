@@ -38,6 +38,8 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
 .toast[style*="opacity: 1"]{animation:slideUp 0.3s ease}
 @media(max-width:800px){.container{flex-direction:column}.store{width:100%}.character{width:200px;height:200px}.collect-btn{padding:16px 32px;font-size:18px}}
 
+
+
 /* Daily mission styles */
 .mission-card{background:linear-gradient(180deg,#ffffff,#fff7e6);padding:12px;border-radius:10px;margin-bottom:12px;border:1px solid rgba(0,0,0,0.04)}
 .mission-card h3{margin:0 0 6px 0;font-size:16px;color:#ff8a65}
@@ -46,3 +48,65 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
 .mission-meta{margin-top:8px;font-size:13px;color:#31414a}
 .claim-btn{margin-top:8px;padding:8px 12px;border-radius:8px;border:none;background:#81c784;color:#063544;font-weight:700;cursor:pointer}
 .claim-btn[disabled]{opacity:.5;cursor:not-allowed}
+
+/* Boss Battle Styles */
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes flash{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes slash{0%{transform:scale(1) rotate(0deg) translateX(0)}50%{transform:scale(1.2) rotate(-45deg) translateX(20px)}100%{transform:scale(1) rotate(0deg) translateX(0)}}
+
+.boss-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;animation:fadeIn 0.3s ease}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.boss-container{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border-radius:20px;padding:30px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:2px solid #e94560}
+
+.boss-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+
+.boss-header h2{margin:0;color:#ff6b6b;font-size:28px;text-shadow:0 0 10px rgba(255,107,107,0.5)}
+
+.close-btn{background:none;border:none;color:#ff6b6b;font-size:28px;cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+
+.close-btn:hover{transform:scale(1.2)}
+
+.boss-content{background:rgba(0,0,0,0.4);padding:20px;border-radius:12px;margin-bottom:20px}
+
+.boss-character{font-size:80px;text-align:center;margin-bottom:15px;animation:shake 0.5s ease infinite}
+
+.boss-info{margin-bottom:15px}
+
+.boss-name{font-size:20px;font-weight:700;color:#ff6b6b;margin-bottom:8px}
+
+.boss-health-bar{height:20px;background:rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;border:2px solid #ff6b6b}
+
+.boss-health-fill{height:100%;background:linear-gradient(90deg,#ff6b6b,#ee5a6f);width:100%;transition:width 0.3s ease}
+
+.boss-stats{color:#aaa;font-size:14px;margin-top:6px}
+
+.player-info{color:#4dd0e1;font-size:14px;margin-top:15px}
+
+.player-health-bar{height:16px;background:rgba(255,255,255,0.1);border-radius:8px;overflow:hidden;margin-top:6px;border:2px solid #4dd0e1}
+
+.player-health-fill{height:100%;background:linear-gradient(90deg,#4dd0e1,#26c6da);width:100%;transition:width 0.3s ease}
+
+.battle-actions{text-align:center;margin-bottom:15px}
+
+.attack-btn{background:linear-gradient(135deg,#ff6b6b,#ee5a6f);color:white;border:none;padding:16px 32px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s ease;box-shadow:0 4px 15px rgba(255,107,107,0.3)}
+
+.attack-btn:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(255,107,107,0.5)}
+
+.attack-btn:active{transform:scale(0.95)}
+
+.damage-display{font-size:24px;font-weight:700;color:#4dd0e1;height:30px;text-shadow:0 0 10px rgba(77,208,225,0.5)}
+
+.battle-log{background:rgba(0,0,0,0.3);padding:12px;border-radius:8px;max-height:120px;overflow-y:auto;font-size:12px;color:#aaa;line-height:1.4}
+
+.battle-log-entry{margin:4px 0;animation:slideUp 0.3s ease}
+
+.battle-log-damage{color:#ff6b6b}
+
+.battle-log-heal{color:#4dd0e1}
+
+.battle-log-victory{color:#81c784;font-weight:700}
+
+.battle-log-defeat{color:#ff6b6b;font-weight:700}
+

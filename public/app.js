@@ -35,11 +35,13 @@
   const CLICKS_KEY = 'sunny_coins_clicks';
   const REVOLVER_KEY = 'sunny_coins_revolver_owned';
   const PURCHASED_ITEMS_KEY = 'sunny_coins_purchased_items';
+  const BOSS_WON_KEY = 'sunny_coins_boss_won_items';
   
   // Game state
   let balance = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
   let revolverOwned = localStorage.getItem(REVOLVER_KEY) === 'true';
   let purchasedItems = JSON.parse(localStorage.getItem(PURCHASED_ITEMS_KEY) || '[]');
+  let bossWonItems = JSON.parse(localStorage.getItem(BOSS_WON_KEY) || '[]');
   let totalEarned = parseInt(localStorage.getItem(TOTAL_EARNED_KEY) || '0', 10);
   let milestone1000Reached = localStorage.getItem(MILESTONE_1000_KEY) === 'true';
   let milestone2000Reached = localStorage.getItem(MILESTONE_2000_KEY) === 'true';
@@ -107,6 +109,160 @@
     setTimeout(() => playSound(180, 0.1), 30);
   }
 
+  // Boss Battle System
+  const bossModal = document.getElementById('bossModal');
+  const closeBossBtn = document.getElementById('closeBossBtn');
+  const attackBtn = document.getElementById('attackBtn');
+  const battleLog = document.getElementById('battleLog');
+  
+  const bosses = {
+    diamond: {
+      name: 'Shadow Guardian',
+      emoji: '👹',
+      maxHealth: 150,
+      reward: 1000,
+      difficulty: 'Medium'
+    },
+    revolver: {
+      name: 'Dark Phantom',
+      emoji: '💀',
+      maxHealth: 250,
+      reward: 5000,
+      difficulty: 'Hard'
+    }
+  };
+  
+  let currentBattle = null;
+  let bossHealth = 0;
+  let playerHealth = 100;
+  let battleInProgress = false;
+
+  function startBossBattle(bossType) {
+    const boss = bosses[bossType];
+    if (!boss) return;
+    
+    currentBattle = { type: bossType, ...boss };
+    bossHealth = boss.maxHealth;
+    playerHealth = 100;
+    battleInProgress = true;
+    
+    document.getElementById('bossName').textContent = boss.name + ` (${boss.difficulty})`;
+    document.getElementById('bossCharacter').textContent = boss.emoji;
+    battleLog.innerHTML = '';
+    addBattleLog(`${boss.name} appears!`, 'victory');
+    
+    bossModal.style.display = 'flex';
+    updateBattleUI();
+  }
+
+  function updateBattleUI() {
+    const maxHealth = currentBattle.maxHealth;
+    document.getElementById('bossHealthFill').style.width = (bossHealth / maxHealth * 100) + '%';
+    document.getElementById('bossStats').textContent = `HP: ${Math.max(0, bossHealth)}/${maxHealth}`;
+    document.getElementById('playerHealth').textContent = Math.max(0, playerHealth);
+    document.getElementById('playerHealthFill').style.width = (playerHealth / 100 * 100) + '%';
+  }
+
+  function addBattleLog(text, type = 'normal') {
+    const entry = document.createElement('div');
+    entry.className = 'battle-log-entry';
+    if (type === 'damage') entry.classList.add('battle-log-damage');
+    if (type === 'heal') entry.classList.add('battle-log-heal');
+    if (type === 'victory') entry.classList.add('battle-log-victory');
+    if (type === 'defeat') entry.classList.add('battle-log-defeat');
+    entry.textContent = text;
+    battleLog.appendChild(entry);
+    battleLog.scrollTop = battleLog.scrollHeight;
+  }
+
+  function performAttack() {
+    if (!battleInProgress || !currentBattle) return;
+    
+    attackBtn.disabled = true;
+    
+    // Player attack
+    const playerDamage = 20 + Math.floor(Math.random() * 30);
+    bossHealth -= playerDamage;
+    document.getElementById('damageDisplay').textContent = `-${playerDamage}`;
+    setTimeout(() => document.getElementById('damageDisplay').textContent = '', 800);
+    
+    addBattleLog(`You dealt ${playerDamage} damage!`, 'damage');
+    playSound(880, 0.15);
+    
+    if (bossHealth <= 0) {
+      endBattle(true);
+      return;
+    }
+    
+    updateBattleUI();
+    
+    // Boss counterattack
+    setTimeout(() => {
+      if (!battleInProgress) return;
+      
+      const bossDamage = 15 + Math.floor(Math.random() * 25);
+      playerHealth -= bossDamage;
+      addBattleLog(`${currentBattle.name} hit you for ${bossDamage} damage!`, 'damage');
+      playSound(440, 0.2);
+      
+      if (playerHealth <= 0) {
+        endBattle(false);
+        return;
+      }
+      
+      updateBattleUI();
+      attackBtn.disabled = false;
+    }, 800);
+  }
+
+  function endBattle(victory) {
+    battleInProgress = false;
+    attackBtn.disabled = true;
+    
+    if (victory) {
+      addBattleLog(`Victory! You earned ${currentBattle.reward} coins!`, 'victory');
+      balance += currentBattle.reward;
+      totalEarned += currentBattle.reward;
+      
+      // Mark the skin as won (free to buy)
+      const skinId = currentBattle.type === 'diamond' ? 'skin-diamond' : 'skin-revolver';
+      if (!bossWonItems.includes(skinId)) {
+        bossWonItems.push(skinId);
+      }
+      
+      // Unlock Diamond Skin milestone when beating Shadow Guardian
+      if (currentBattle.type === 'diamond' && !milestone1000Reached) {
+        milestone1000Reached = true;
+        localStorage.setItem(MILESTONE_1000_KEY, 'true');
+      }
+      
+      save();
+      renderBalance();
+      renderItems(); // Update store to show free skin
+      milestoneSound();
+      checkMilestones();
+      setTimeout(() => {
+        bossModal.style.display = 'none';
+        showToast(`Boss defeated! +${currentBattle.reward} coins! Skin is FREE! 🎉`);
+      }, 1500);
+    } else {
+      addBattleLog('You were defeated... Try again!', 'defeat');
+      playSound(200, 0.3);
+      setTimeout(() => {
+        attackBtn.disabled = false;
+        // Allow retry
+      }, 800);
+    }
+  }
+
+  closeBossBtn.addEventListener('click', () => {
+    battleInProgress = false;
+    attackBtn.disabled = false;
+    bossModal.style.display = 'none';
+  });
+
+  attackBtn.addEventListener('click', performAttack);
+
   // Game functions
   function renderBalance() { 
     coinEl.textContent = balance; 
@@ -123,6 +279,7 @@
     localStorage.setItem(CLICKS_KEY, String(totalClicks));
     localStorage.setItem(REVOLVER_KEY, String(revolverOwned));
     localStorage.setItem(PURCHASED_ITEMS_KEY, JSON.stringify(purchasedItems));
+    localStorage.setItem(BOSS_WON_KEY, JSON.stringify(bossWonItems));
   }
 
   function showToast(text) { 
@@ -347,6 +504,7 @@
       localStorage.removeItem(CLICKS_KEY);
       localStorage.removeItem(REVOLVER_KEY);
       localStorage.removeItem(PURCHASED_ITEMS_KEY);
+      localStorage.removeItem(BOSS_WON_KEY);
       
       // Reset game state
       balance = 0;
@@ -359,6 +517,7 @@
       totalClicks = 0;
       revolverOwned = false;
       purchasedItems = [];
+      bossWonItems = [];
       
       // Reset UI
       renderBalance();
@@ -387,12 +546,35 @@
       const requiresDiamondNotOwned = it.requiresDiamond && !milestone1000Reached;
       const isLocked = (it.premium && balance < it.price) || requiresDiamondNotOwned;
       const lockReason = requiresDiamondNotOwned ? ' (Need Diamond)' : '';
-      div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${it.price} coins${lockReason}</div></div>`;
+      const isBossWon = bossWonItems.includes(it.id);
+      
+      let btnText = 'Buy';
+      let priceText = it.price;
+      
+      if (it.id === 'skin-diamond') {
+        if (isBossWon) {
+          btnText = '🎁 FREE';
+          priceText = 'FREE!';
+        } else {
+          btnText = isLocked ? '🔒 Locked' : '⚔️ Battle Boss';
+        }
+      } else if (it.id === 'skin-revolver') {
+        if (isBossWon) {
+          btnText = '🎁 FREE';
+          priceText = 'FREE!';
+        } else {
+          btnText = isLocked ? '🔒 Locked' : '⚔️ Battle Boss';
+        }
+      } else {
+        btnText = isLocked ? '🔒 Locked' : 'Buy';
+      }
+      
+      div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${priceText} coins${lockReason}</div></div>`;
       const btn = document.createElement('button');
-      btn.textContent = isLocked ? '🔒 Locked' : 'Buy';
-      btn.disabled = isLocked;
-      btn.style.opacity = isLocked ? '0.5' : '1';
-      if (!isLocked) {
+      btn.textContent = btnText;
+      btn.disabled = isLocked && !isBossWon;
+      btn.style.opacity = (isLocked && !isBossWon) ? '0.5' : '1';
+      if (!isLocked || isBossWon) {
         btn.addEventListener('click', () => attemptBuy(it));
       }
       div.appendChild(btn);
@@ -401,8 +583,22 @@
   }
 
   async function attemptBuy(item) {
+    // For premium skins that haven't been won via boss battle, start a boss battle instead
+    if (item.id === 'skin-diamond' && !bossWonItems.includes('skin-diamond')) {
+      startBossBattle('diamond');
+      return;
+    }
+    if (item.id === 'skin-revolver' && !bossWonItems.includes('skin-revolver')) {
+      startBossBattle('revolver');
+      return;
+    }
+    
+    // Handle boss-won free skins (0 coins needed)
+    const isBossWon = bossWonItems.includes(item.id);
+    const actualPrice = isBossWon ? 0 : item.price;
+    
     // STRICT validation: ensure we have enough coins BEFORE attempting purchase
-    if (balance < item.price) { 
+    if (balance < actualPrice) { 
       showToast('Not enough coins — keep playing!'); 
       return; 
     }
@@ -417,15 +613,15 @@
       const res = await fetch('/api/purchase', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ itemId: item.id, price: item.price, currentBalance: balance }) 
+        body: JSON.stringify({ itemId: item.id, price: actualPrice, currentBalance: balance }) 
       });
       const data = await res.json();
       
       if (data && data.success) {
         // Double-check balance is still sufficient before deducting
-        if (balance >= item.price) {
+        if (balance >= actualPrice) {
           buttonClickSound();
-          balance -= item.price;
+          balance -= actualPrice;
           // Ensure balance never goes negative
           if (balance < 0) balance = 0;
           // Mark item as purchased
@@ -435,7 +631,8 @@
           save(); 
           renderBalance(); 
           successSound(); 
-          showToast('Purchase successful! 🎁'); 
+          const message = isBossWon ? 'Skin acquired for free! 🎁' : 'Purchase successful! 🎁';
+          showToast(message); 
           applyItem(item); 
           renderItems();
         } else {
