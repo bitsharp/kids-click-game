@@ -1,0 +1,31 @@
+*{box-sizing:border-box}
+body{margin:0;font-family:'Baloo 2',system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#c9f6ff 0%,#fff9c4 100%);color:#21303a;min-height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:rgba(255,255,255,0.6);backdrop-filter:blur(4px);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.logo{font-weight:700;font-size:20px;color:#ff8a65}
+.balance{font-weight:600}
+.container{display:flex;gap:20px;padding:24px;flex:1}
+.game{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.character{width:220px;height:220px;display:flex;align-items:center;justify-content:center;border-radius:50%;box-shadow:0 8px 24px rgba(0,0,0,0.08);background:radial-gradient(circle at 30% 30%,#fff9c4,#ffd54a);}
+.sun{width:160px;height:160px}
+.collect-btn{margin-top:8px;padding:18px 30px;border-radius:12px;border:none;background:#ff7043;color:#fff;font-size:18px;box-shadow:0 8px 18px rgba(255,112,67,0.28);cursor:pointer;transition:transform .12s ease;display:flex;align-items:center;gap:8px}
+.collect-btn:active{transform:scale(.98)}
+#tapCoins{font-size:14px;opacity:.9;background:rgba(255,255,255,0.2);padding:4px 8px;border-radius:6px}
+.message{color:#2d2d2d;opacity:.85}
+.store{width:320px;background:rgba(255,255,255,0.8);padding:18px;border-radius:12px;align-self:flex-start;box-shadow:0 8px 20px rgba(16,24,40,0.06)}
+.store h2{margin:0 0 12px 0}
+.items{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:linear-gradient(180deg,#fff,#fff9);border:1px solid rgba(0,0,0,0.04)}
+.item .meta{display:flex;gap:10px;align-items:center}
+.item button{background:#ffd54a;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+.shop-btn{margin-top:12px;padding:10px;width:100%;border-radius:8px;border:none;background:#4dd0e1;color:#063544;font-weight:700;cursor:pointer}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:28px;background:rgba(33,48,58,0.92);color:#fff;padding:10px 16px;border-radius:999px;opacity:0;transition:opacity .2s ease}
+@media(max-width:800px){.container{flex-direction:column}.store{width:100%}}
+
+/* Daily mission styles */
+.mission-card{background:linear-gradient(180deg,#ffffff,#fff7e6);padding:12px;border-radius:10px;margin-bottom:12px;border:1px solid rgba(0,0,0,0.04)}
+.mission-card h3{margin:0 0 6px 0;font-size:16px;color:#ff8a65}
+.mission-progress{height:10px;background:rgba(0,0,0,0.06);border-radius:8px;margin-top:8px;overflow:hidden}
+.mission-bar-fill{height:100%;background:linear-gradient(90deg,#ffd54a,#ffb74d);width:0;transition:width 300ms ease}
+.mission-meta{margin-top:8px;font-size:13px;color:#31414a}
+.claim-btn{margin-top:8px;padding:8px 12px;border-radius:8px;border:none;background:#81c784;color:#063544;font-weight:700;cursor:pointer}
+.claim-btn[disabled]{opacity:.5;cursor:not-allowed}

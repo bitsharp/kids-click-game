@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sunny Coins — Kids Click Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">Sunny Coins</div>
+    <div class="balance">Coins: <span id="coinCount">0</span></div>
+  </header>
+
+  <main class="container">
+    <section class="game">
+      <div class="character" id="character">
+        <svg viewBox="0 0 100 100" class="sun">
+          <circle cx="50" cy="50" r="22" fill="#FFD54A"></circle>
+        </svg>
+      </div>
+      <button id="collectBtn" class="collect-btn">Tap Me! <span id="tapCoins">+2</span></button>
+      <div class="message" id="message">Tap the sun to collect coins!</div>
+    </section>
+
+    <aside class="store">
+      <h2>Store</h2>
+      <div id="items" class="items"></div>
+      <button id="openShop" class="shop-btn">Open Shop</button>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" aria-hidden="true"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
