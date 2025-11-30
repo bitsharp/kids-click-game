@@ -63,9 +63,9 @@
     { id: 'boost-2x', name: '2x Booster (1min)', price: 300 },
     { id: 'skin-diamond', name: 'Diamond Skin (1000 coins)', price: 1000, premium: true },
     { id: 'skin-revolver', name: 'Revolver Gun (5000 coins)', price: 5000, premium: true, requiresDiamond: true },
-    { id: 'weapon-sword', name: '⚔️ Iron Sword', price: 500, weapon: true, damage: 35 },
-    { id: 'weapon-axe', name: '🪓 Battle Axe', price: 1200, weapon: true, damage: 50 },
-    { id: 'weapon-lance', name: '🔱 Holy Lance', price: 2500, weapon: true, damage: 65 }
+    { id: 'weapon-sword', name: '⚔️ Iron Sword', price: 500, weapon: true, damage: 60 },
+    { id: 'weapon-axe', name: '🪓 Battle Axe', price: 1200, weapon: true, damage: 85 },
+    { id: 'weapon-lance', name: '🔱 Holy Lance', price: 2500, weapon: true, damage: 110 }
   ];
 
   // Sound manager
@@ -159,15 +159,60 @@
     document.getElementById('bossName').textContent = `Difficulty: ${boss.difficulty} | Reward: ${boss.reward} coins`;
     document.getElementById('bossCharacter').textContent = boss.emoji;
     battleLog.innerHTML = '';
-    addBattleLog(`${boss.name} appears! Prepare for battle!`, 'victory');
-    const weaponInfo = getWeaponDamage();
-    addBattleLog(`Equipped: ${weaponInfo.name}`, 'normal');
+    addBattleLog(`${boss.name} appears! Choose your weapon!`, 'victory');
+    
+    // Show weapon selection
+    showWeaponSelection();
     
     bossModal.style.display = 'flex';
     bossModal.classList.add('battle-active');
+    attackBtn.disabled = true;
+    attackBtn.textContent = '⚡ Select Weapon First';
+    updateBattleUI();
+  }
+
+  function showWeaponSelection() {
+    const weaponSelector = document.getElementById('weaponSelector');
+    weaponSelector.innerHTML = '<div class="weapon-select-title">⚔️ Choose Your Weapon:</div>';
+    
+    // Add fists option (always available)
+    const fistsInfo = getWeaponDamage('fists');
+    const fistsBtn = document.createElement('button');
+    fistsBtn.className = 'weapon-option';
+    fistsBtn.innerHTML = `<div class="weapon-name">${fistsInfo.name}</div><div class="weapon-damage">Damage: ${fistsInfo.base}-${fistsInfo.base + fistsInfo.max}</div>`;
+    fistsBtn.addEventListener('click', () => selectWeaponForBattle('fists'));
+    weaponSelector.appendChild(fistsBtn);
+    
+    // Add purchased weapons
+    items.filter(item => item.weapon && purchasedItems.includes(item.id)).forEach(weapon => {
+      const weaponInfo = getWeaponDamage(weapon.id);
+      const btn = document.createElement('button');
+      btn.className = 'weapon-option';
+      if (currentWeapon === weapon.id) btn.classList.add('selected');
+      btn.innerHTML = `<div class="weapon-name">${weapon.name}</div><div class="weapon-damage">Damage: ${weaponInfo.base}-${weaponInfo.base + weaponInfo.max}</div>`;
+      btn.addEventListener('click', () => selectWeaponForBattle(weapon.id));
+      weaponSelector.appendChild(btn);
+    });
+    
+    weaponSelector.style.display = 'block';
+  }
+
+  function selectWeaponForBattle(weaponId) {
+    currentWeapon = weaponId;
+    const weaponInfo = getWeaponDamage(weaponId);
+    
+    // Hide weapon selector
+    document.getElementById('weaponSelector').style.display = 'none';
+    
+    // Update battle log
+    addBattleLog(`Equipped: ${weaponInfo.name} (${weaponInfo.base}-${weaponInfo.base + weaponInfo.max} damage)`, 'normal');
+    addBattleLog('Ready for battle!', 'victory');
+    
+    // Enable attack button
     attackBtn.disabled = false;
     attackBtn.textContent = '⚡ Attack';
-    updateBattleUI();
+    
+    buttonClickSound();
   }
 
   function updateBattleUI() {
@@ -190,10 +235,11 @@
     battleLog.scrollTop = battleLog.scrollHeight;
   }
 
-  function getWeaponDamage() {
-    const weaponItem = items.find(it => it.id === currentWeapon);
-    if (!weaponItem || !weaponItem.weapon) return { base: 20, max: 30, name: 'Fists' };
-    return { base: weaponItem.damage - 15, max: 15, name: weaponItem.name };
+  function getWeaponDamage(weaponId = null) {
+    const weaponToUse = weaponId || currentWeapon;
+    const weaponItem = items.find(it => it.id === weaponToUse);
+    if (!weaponItem || !weaponItem.weapon) return { base: 15, max: 25, name: '👊 Fists', id: 'fists' };
+    return { base: weaponItem.damage - 20, max: 30, name: weaponItem.name, id: weaponItem.id };
   }
 
   function performAttack() {
