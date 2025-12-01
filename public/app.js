@@ -45,6 +45,7 @@
   const WEAPON_KEY = 'sunny_coins_current_weapon';
   const BOSS_LEVEL_KEY = 'sunny_coins_boss_level';
   const HIGHEST_COIN_MILESTONE_KEY = 'sunny_coins_highest_milestone';
+  const AGE_GROUP_KEY = 'sunny_coins_age_group';
   
   // Game state
   let balance = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
@@ -61,6 +62,7 @@
   let totalClicks = parseInt(localStorage.getItem(CLICKS_KEY) || '0', 10);
   let bossLevel = parseInt(localStorage.getItem(BOSS_LEVEL_KEY) || '0', 10);
   let highestCoinMilestone = parseInt(localStorage.getItem(HIGHEST_COIN_MILESTONE_KEY) || '0', 10);
+  let ageGroup = localStorage.getItem(AGE_GROUP_KEY) || null;
   let comboTimeout = null;
 
   const baseItems = [
@@ -280,33 +282,136 @@
   }
 
   function generateMathQuestion() {
-    const operations = ['+', '-', '×', '÷'];
-    const operation = operations[Math.floor(Math.random() * operations.length)];
-    let num1, num2, correctAnswer;
+    let operations, num1, num2, correctAnswer, operation;
     
-    const difficulty = Math.min(10, bossLevel + 1);
-    
-    switch(operation) {
-      case '+':
-        num1 = Math.floor(Math.random() * (10 + difficulty * 5)) + 1;
-        num2 = Math.floor(Math.random() * (10 + difficulty * 5)) + 1;
-        correctAnswer = num1 + num2;
+    // Age group based difficulty
+    switch(ageGroup) {
+      case '5-7':
+        // Only + and - with single digits (1-9)
+        operations = ['+', '-'];
+        operation = operations[Math.floor(Math.random() * operations.length)];
+        
+        if(operation === '+') {
+          num1 = Math.floor(Math.random() * 9) + 1;
+          num2 = Math.floor(Math.random() * 9) + 1;
+          correctAnswer = num1 + num2;
+        } else {
+          num1 = Math.floor(Math.random() * 9) + 2;
+          num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+          correctAnswer = num1 - num2;
+        }
         break;
-      case '-':
-        num1 = Math.floor(Math.random() * (10 + difficulty * 5)) + 10;
-        num2 = Math.floor(Math.random() * num1) + 1;
-        correctAnswer = num1 - num2;
+        
+      case '8-11':
+        // +, -, ×, ÷ with 1-2 digits
+        operations = ['+', '-', '×', '÷'];
+        operation = operations[Math.floor(Math.random() * operations.length)];
+        
+        if(operation === '+') {
+          num1 = Math.floor(Math.random() * 90) + 10; // 10-99
+          num2 = Math.floor(Math.random() * 90) + 10;
+          correctAnswer = num1 + num2;
+        } else if(operation === '-') {
+          num1 = Math.floor(Math.random() * 90) + 20; // 20-109
+          num2 = Math.floor(Math.random() * (num1 - 10)) + 10;
+          correctAnswer = num1 - num2;
+        } else if(operation === '×') {
+          num1 = Math.floor(Math.random() * 12) + 2; // 2-13
+          num2 = Math.floor(Math.random() * 9) + 2; // 2-10
+          correctAnswer = num1 * num2;
+        } else { // ÷
+          num2 = Math.floor(Math.random() * 9) + 2; // 2-10
+          correctAnswer = Math.floor(Math.random() * 12) + 2;
+          num1 = num2 * correctAnswer;
+        }
         break;
-      case '×':
-        num1 = Math.floor(Math.random() * (5 + difficulty)) + 1;
-        num2 = Math.floor(Math.random() * (5 + difficulty)) + 1;
-        correctAnswer = num1 * num2;
+        
+      case '12-18':
+        // +, -, ×, ÷ with 2-4 digits
+        operations = ['+', '-', '×', '÷'];
+        operation = operations[Math.floor(Math.random() * operations.length)];
+        
+        if(operation === '+') {
+          num1 = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
+          num2 = Math.floor(Math.random() * 9000) + 1000;
+          correctAnswer = num1 + num2;
+        } else if(operation === '-') {
+          num1 = Math.floor(Math.random() * 9000) + 2000; // 2000-10999
+          num2 = Math.floor(Math.random() * (num1 - 1000)) + 1000;
+          correctAnswer = num1 - num2;
+        } else if(operation === '×') {
+          num1 = Math.floor(Math.random() * 90) + 10; // 10-99
+          num2 = Math.floor(Math.random() * 90) + 10;
+          correctAnswer = num1 * num2;
+        } else { // ÷
+          num2 = Math.floor(Math.random() * 90) + 10; // 10-99
+          correctAnswer = Math.floor(Math.random() * 90) + 10;
+          num1 = num2 * correctAnswer;
+        }
         break;
-      case '÷':
-        num2 = Math.floor(Math.random() * (5 + Math.floor(difficulty / 2))) + 2;
-        correctAnswer = Math.floor(Math.random() * (5 + difficulty)) + 1;
-        num1 = num2 * correctAnswer;
+        
+      case '19-99':
+        // Only × and ÷ with 1-4 digits
+        operations = ['×', '÷'];
+        operation = operations[Math.floor(Math.random() * operations.length)];
+        
+        if(operation === '×') {
+          const digitChoices = [1, 2, 3, 4];
+          const digits1 = digitChoices[Math.floor(Math.random() * digitChoices.length)];
+          const digits2 = digitChoices[Math.floor(Math.random() * digitChoices.length)];
+          
+          const max1 = Math.pow(10, digits1) - 1;
+          const min1 = digits1 === 1 ? 2 : Math.pow(10, digits1 - 1);
+          const max2 = Math.pow(10, digits2) - 1;
+          const min2 = digits2 === 1 ? 2 : Math.pow(10, digits2 - 1);
+          
+          num1 = Math.floor(Math.random() * (max1 - min1 + 1)) + min1;
+          num2 = Math.floor(Math.random() * (max2 - min2 + 1)) + min2;
+          correctAnswer = num1 * num2;
+        } else { // ÷
+          const digitChoices = [1, 2, 3, 4];
+          const digits1 = digitChoices[Math.floor(Math.random() * digitChoices.length)];
+          const digits2 = digitChoices[Math.floor(Math.random() * digitChoices.length)];
+          
+          const max1 = Math.pow(10, digits2) - 1;
+          const min1 = digits2 === 1 ? 2 : Math.pow(10, digits2 - 1);
+          const max2 = Math.pow(10, digits1) - 1;
+          const min2 = digits1 === 1 ? 2 : Math.pow(10, digits1 - 1);
+          
+          num2 = Math.floor(Math.random() * (max1 - min1 + 1)) + min1;
+          correctAnswer = Math.floor(Math.random() * (max2 - min2 + 1)) + min2;
+          num1 = num2 * correctAnswer;
+        }
         break;
+        
+      default:
+        // Fallback to original logic if no age group set
+        operations = ['+', '-', '×', '÷'];
+        operation = operations[Math.floor(Math.random() * operations.length)];
+        const difficulty = Math.min(10, bossLevel + 1);
+        
+        switch(operation) {
+          case '+':
+            num1 = Math.floor(Math.random() * (10 + difficulty * 5)) + 1;
+            num2 = Math.floor(Math.random() * (10 + difficulty * 5)) + 1;
+            correctAnswer = num1 + num2;
+            break;
+          case '-':
+            num1 = Math.floor(Math.random() * (10 + difficulty * 5)) + 10;
+            num2 = Math.floor(Math.random() * num1) + 1;
+            correctAnswer = num1 - num2;
+            break;
+          case '×':
+            num1 = Math.floor(Math.random() * (5 + difficulty)) + 1;
+            num2 = Math.floor(Math.random() * (5 + difficulty)) + 1;
+            correctAnswer = num1 * num2;
+            break;
+          case '÷':
+            num2 = Math.floor(Math.random() * (5 + Math.floor(difficulty / 2))) + 2;
+            correctAnswer = Math.floor(Math.random() * (5 + difficulty)) + 1;
+            num1 = num2 * correctAnswer;
+            break;
+        }
     }
     
     // Generate wrong answers
@@ -899,6 +1004,7 @@
       localStorage.removeItem(WEAPON_KEY);
       localStorage.removeItem(BOSS_LEVEL_KEY);
       localStorage.removeItem(HIGHEST_COIN_MILESTONE_KEY);
+      localStorage.removeItem(AGE_GROUP_KEY);
       
       // Reset game state
       balance = 0;
@@ -915,11 +1021,15 @@
       currentWeapon = 'fists';
       bossLevel = 0;
       highestCoinMilestone = 0;
+      ageGroup = null;
       
       // Reset UI
       renderBalance();
       renderItems();
       updateChallengeBossButton();
+      
+      // Show age selection modal again
+      showAgeModal();
       
       // Reset sun skin to default
       const sun = document.querySelector('.sun');
@@ -1084,6 +1194,34 @@
   }
 
   window._app = { addCoins };
+  
+  // Age selection modal logic
+  const ageModal = document.getElementById('ageModal');
+  const ageOptions = document.querySelectorAll('.age-option');
+  
+  function showAgeModal() {
+    ageModal.style.display = 'flex';
+  }
+  
+  function hideAgeModal() {
+    ageModal.style.display = 'none';
+  }
+  
+  ageOptions.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selectedAge = btn.getAttribute('data-age');
+      ageGroup = selectedAge;
+      localStorage.setItem(AGE_GROUP_KEY, selectedAge);
+      hideAgeModal();
+      showToast(`Age group set: ${selectedAge} years! 🎉`);
+    });
+  });
+  
+  // Show age modal on first load or if not set
+  if (!ageGroup) {
+    showAgeModal();
+  }
+  
   renderBalance(); 
   renderItems();
   if (milestone2000Reached) {
