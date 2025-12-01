@@ -830,17 +830,55 @@
 
   function renderItems() { 
     itemsEl.innerHTML = '';
+    
+    // Find the first unpurchased weapon
+    const weapons = items.filter(it => it.weapon);
+    let nextWeaponToShow = null;
+    
+    for (let i = 0; i < weapons.length; i++) {
+      if (!purchasedItems.includes(weapons[i].id)) {
+        nextWeaponToShow = weapons[i];
+        break;
+      }
+    }
+    
+    console.log('Rendering items. Next weapon to show:', nextWeaponToShow);
+    console.log('Purchased items:', purchasedItems);
+    
     items.forEach(it => {
       const div = document.createElement('div'); 
       div.className = 'item';
       
       const isWeapon = it.weapon;
-      const isEquipped = isWeapon && currentWeapon === it.id;
       const isPurchased = purchasedItems.includes(it.id);
+      
+      // For weapons: only show the next unpurchased weapon
+      if (isWeapon) {
+        console.log(`Checking weapon ${it.name}: purchased=${isPurchased}, isNext=${nextWeaponToShow && it.id === nextWeaponToShow.id}`);
+        
+        // If this weapon is already purchased, don't show it
+        if (isPurchased) {
+          console.log(`  Skipping ${it.name} - already purchased`);
+          return; // Skip this weapon
+        }
+        // If this is not the next weapon to show, skip it
+        if (nextWeaponToShow && it.id !== nextWeaponToShow.id) {
+          console.log(`  Skipping ${it.name} - not the next weapon`);
+          return; // Skip this weapon
+        }
+        // If all weapons are purchased, don't show any
+        if (!nextWeaponToShow) {
+          console.log(`  Skipping ${it.name} - all weapons purchased`);
+          return; // Skip this weapon
+        }
+        
+        console.log(`  Showing ${it.name} - this is the next weapon!`);
+      }
+      
+      const isEquipped = isWeapon && currentWeapon === it.id;
       
       // For weapons, check if unlocked based on boss level
       const weaponUnlocked = !isWeapon || (it.unlockBossLevel !== undefined && totalEarned >= it.unlockBossLevel * 5000);
-      const isLocked = !weaponUnlocked || (balance < it.price && !isPurchased);
       
       let btnText = 'Buy';
       let priceText = it.price;
@@ -851,10 +889,6 @@
           const requiredCoins = it.unlockBossLevel * 5000;
           lockReason = ` (Unlocks at ${requiredCoins} coins)`;
           btnText = '🔒 Locked';
-        } else if (isEquipped) {
-          btnText = '✅ Equipped';
-        } else if (isPurchased) {
-          btnText = '🔄 Equip';
         } else {
           btnText = balance < it.price ? '💰 Need More Coins' : 'Buy';
         }
@@ -863,10 +897,10 @@
       div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${priceText} coins${lockReason}</div></div>`;
       const btn = document.createElement('button');
       btn.textContent = btnText;
-      btn.disabled = !weaponUnlocked || isEquipped || (!isPurchased && balance < it.price);
-      btn.style.opacity = (!weaponUnlocked || isEquipped || (!isPurchased && balance < it.price)) ? '0.5' : '1';
+      btn.disabled = !weaponUnlocked || (!isPurchased && balance < it.price);
+      btn.style.opacity = (!weaponUnlocked || (!isPurchased && balance < it.price)) ? '0.5' : '1';
       
-      if (weaponUnlocked && (isPurchased || balance >= it.price || isWeapon)) {
+      if (weaponUnlocked && (balance >= it.price || !isWeapon)) {
         btn.addEventListener('click', () => attemptBuy(it));
       }
       
