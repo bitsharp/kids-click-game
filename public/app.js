@@ -62,12 +62,12 @@
 
   const items = [
     { id: 'boost-2x', name: '2x Booster (1min)', price: 300 },
-    { id: 'weapon-sword', name: '⚔️ Iron Sword', price: 5500, weapon: true, damage: 60 },
-    { id: 'weapon-axe', name: '🪓 Battle Axe', price: 6200, weapon: true, damage: 85 },
-    { id: 'weapon-lance', name: '🔱 Holy Lance', price: 7500, weapon: true, damage: 110 },
-    { id: 'weapon-katana', name: '🗡️ Shadow Katana', price: 9000, weapon: true, damage: 140 },
-    { id: 'weapon-hammer', name: '🔨 Thunder Hammer', price: 11000, weapon: true, damage: 175 },
-    { id: 'weapon-bow', name: '🏹 Dragon Bow', price: 13500, weapon: true, damage: 215 }
+    { id: 'weapon-sword', name: '⚔️ Iron Sword', price: 5500, weapon: true, damage: 60, unlockBossLevel: 0 },
+    { id: 'weapon-axe', name: '🪓 Battle Axe', price: 6200, weapon: true, damage: 85, unlockBossLevel: 1 },
+    { id: 'weapon-lance', name: '🔱 Holy Lance', price: 7500, weapon: true, damage: 110, unlockBossLevel: 2 },
+    { id: 'weapon-katana', name: '🗡️ Shadow Katana', price: 9000, weapon: true, damage: 140, unlockBossLevel: 3 },
+    { id: 'weapon-hammer', name: '🔨 Thunder Hammer', price: 11000, weapon: true, damage: 175, unlockBossLevel: 4 },
+    { id: 'weapon-bow', name: '🏹 Dragon Bow', price: 13500, weapon: true, damage: 215, unlockBossLevel: 5 }
   ];
 
   // Sound manager
@@ -208,7 +208,9 @@
 
   function showWeaponSelection() {
     const weaponSelector = document.getElementById('weaponSelector');
-    weaponSelector.innerHTML = '<div class="weapon-select-title">⚔️ Choose Your Weapon:</div>';
+    weaponSelector.innerHTML = '<div class="weapon-select-title">⚔️ Choose Your Weapon:</div><div class="weapon-options-grid"></div>';
+    
+    const gridContainer = weaponSelector.querySelector('.weapon-options-grid');
     
     // Add fists option (always available)
     const fistsInfo = getWeaponDamage('fists');
@@ -216,7 +218,7 @@
     fistsBtn.className = 'weapon-option';
     fistsBtn.innerHTML = `<div class="weapon-name">${fistsInfo.name}</div><div class="weapon-damage">Damage: ${fistsInfo.base}-${fistsInfo.base + fistsInfo.max}</div>`;
     fistsBtn.addEventListener('click', () => selectWeaponForBattle('fists'));
-    weaponSelector.appendChild(fistsBtn);
+    gridContainer.appendChild(fistsBtn);
     
     // Add purchased weapons
     items.filter(item => item.weapon && purchasedItems.includes(item.id)).forEach(weapon => {
@@ -226,7 +228,7 @@
       if (currentWeapon === weapon.id) btn.classList.add('selected');
       btn.innerHTML = `<div class="weapon-name">${weapon.name}</div><div class="weapon-damage">Damage: ${weaponInfo.base}-${weaponInfo.base + weaponInfo.max}</div>`;
       btn.addEventListener('click', () => selectWeaponForBattle(weapon.id));
-      weaponSelector.appendChild(btn);
+      gridContainer.appendChild(btn);
     });
     
     weaponSelector.style.display = 'block';
@@ -738,42 +740,45 @@
   function renderItems() { 
     itemsEl.innerHTML = '';
     items.forEach(it => {
-      // Hide purchased items (don't show them in the store)
-      if (purchasedItems.includes(it.id)) {
-        return; // Skip this item, don't display it
-      }
-      
       const div = document.createElement('div'); 
       div.className = 'item';
-      const requiresDiamondNotOwned = it.requiresDiamond && !milestone1000Reached;
-      const isLocked = (it.premium && balance < it.price) || requiresDiamondNotOwned;
-      const lockReason = requiresDiamondNotOwned ? ' (Need Diamond)' : '';
+      
       const isWeapon = it.weapon;
       const isEquipped = isWeapon && currentWeapon === it.id;
+      const isPurchased = purchasedItems.includes(it.id);
+      
+      // For weapons, check if unlocked based on boss level
+      const weaponUnlocked = !isWeapon || (it.unlockBossLevel !== undefined && totalEarned >= it.unlockBossLevel * 5000);
+      const isLocked = !weaponUnlocked || (balance < it.price && !isPurchased);
       
       let btnText = 'Buy';
       let priceText = it.price;
+      let lockReason = '';
       
       if (isWeapon) {
-        if (isEquipped) {
+        if (!weaponUnlocked) {
+          const requiredCoins = it.unlockBossLevel * 5000;
+          lockReason = ` (Unlocks at ${requiredCoins} coins)`;
+          btnText = '🔒 Locked';
+        } else if (isEquipped) {
           btnText = '✅ Equipped';
-        } else if (purchasedItems.includes(it.id)) {
+        } else if (isPurchased) {
           btnText = '🔄 Equip';
         } else {
-          btnText = isLocked ? '🔒 Locked' : 'Buy';
+          btnText = balance < it.price ? '💰 Need More Coins' : 'Buy';
         }
-      } else {
-        btnText = isLocked ? '🔒 Locked' : 'Buy';
       }
       
       div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${priceText} coins${lockReason}</div></div>`;
       const btn = document.createElement('button');
       btn.textContent = btnText;
-      btn.disabled = isLocked || isEquipped;
-      btn.style.opacity = (isLocked || isEquipped) ? '0.5' : '1';
-      if (!isLocked || (isWeapon && purchasedItems.includes(it.id))) {
+      btn.disabled = !weaponUnlocked || isEquipped || (!isPurchased && balance < it.price);
+      btn.style.opacity = (!weaponUnlocked || isEquipped || (!isPurchased && balance < it.price)) ? '0.5' : '1';
+      
+      if (weaponUnlocked && (isPurchased || balance >= it.price || isWeapon)) {
         btn.addEventListener('click', () => attemptBuy(it));
       }
+      
       div.appendChild(btn);
       itemsEl.appendChild(div);
     })

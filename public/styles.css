@@ -76,19 +76,21 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
 
 .close-btn:hover{color:#ff6b6b}
 
-.weapon-selector{background:#f5f5f5;padding:16px;border-radius:8px;margin-bottom:16px;border:1px solid #ddd}
+.weapon-selector{background:#f5f5f5;padding:12px;border-radius:8px;margin-bottom:16px;border:1px solid #ddd}
 
-.weapon-select-title{font-size:16px;font-weight:700;color:#333;margin-bottom:12px;text-align:center}
+.weapon-select-title{font-size:14px;font-weight:700;color:#333;margin-bottom:10px;text-align:center}
 
-.weapon-option{background:#fff;border:2px solid #ddd;padding:10px 14px;border-radius:8px;cursor:pointer;transition:all 0.2s;margin:6px 0;width:100%;text-align:left;color:#333;font-family:'Baloo 2',sans-serif}
+.weapon-options-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 
-.weapon-option:hover{border-color:#4dd0e1;background:#f0f9ff}
+.weapon-option{background:#fff;border:2px solid #ddd;padding:8px 12px;border-radius:6px;cursor:pointer;transition:all 0.2s;color:#333;font-family:'Baloo 2',sans-serif;flex:0 1 auto;min-width:fit-content}
+
+.weapon-option:hover{border-color:#4dd0e1;background:#f0f9ff;transform:translateY(-2px)}
 
 .weapon-option.selected{border-color:#81c784;background:#e8f5e9}
 
-.weapon-name{font-size:15px;font-weight:700;margin-bottom:3px}
+.weapon-name{font-size:13px;font-weight:700;margin-bottom:2px}
 
-.weapon-damage{font-size:12px;color:#666;font-weight:600}
+.weapon-damage{font-size:11px;color:#666;font-weight:600}
 
 .battle-content{display:flex;align-items:center;justify-content:space-around;margin-bottom:20px;padding:16px;background:#f9f9f9;border-radius:8px}
 
