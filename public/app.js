@@ -194,62 +194,20 @@
     document.getElementById('bossTitle').textContent = `⚔️ ${boss.name}`;
     document.getElementById('bossName').textContent = `Difficulty: ${boss.difficulty} | Reward: ${boss.reward} coins`;
     document.getElementById('bossCharacter').textContent = boss.emoji;
-    addBattleLog(`${boss.name} appears! Choose your weapon!`, 'victory');
     
-    // Show weapon selection
-    showWeaponSelection();
+    // Use currently equipped weapon, no selection needed
+    const weaponInfo = getWeaponDamage(currentWeapon);
+    addBattleLog(`${boss.name} appears!`, 'victory');
+    addBattleLog(`Fighting with: ${weaponInfo.name} (${weaponInfo.base}-${weaponInfo.base + weaponInfo.max} damage)`, 'normal');
+    
+    // Hide weapon selector (not needed)
+    document.getElementById('weaponSelector').style.display = 'none';
     
     bossModal.style.display = 'flex';
     bossModal.classList.add('battle-active');
-    attackBtn.disabled = true;
-    attackBtn.textContent = '⚡ Select Weapon First';
-    updateBattleUI();
-  }
-
-  function showWeaponSelection() {
-    const weaponSelector = document.getElementById('weaponSelector');
-    weaponSelector.innerHTML = '<div class="weapon-select-title">⚔️ Choose Your Weapon:</div><div class="weapon-options-grid"></div>';
-    
-    const gridContainer = weaponSelector.querySelector('.weapon-options-grid');
-    
-    // Add fists option (always available)
-    const fistsInfo = getWeaponDamage('fists');
-    const fistsBtn = document.createElement('button');
-    fistsBtn.className = 'weapon-option';
-    fistsBtn.innerHTML = `<div class="weapon-name">${fistsInfo.name}</div><div class="weapon-damage">Damage: ${fistsInfo.base}-${fistsInfo.base + fistsInfo.max}</div>`;
-    fistsBtn.addEventListener('click', () => selectWeaponForBattle('fists'));
-    gridContainer.appendChild(fistsBtn);
-    
-    // Add purchased weapons
-    items.filter(item => item.weapon && purchasedItems.includes(item.id)).forEach(weapon => {
-      const weaponInfo = getWeaponDamage(weapon.id);
-      const btn = document.createElement('button');
-      btn.className = 'weapon-option';
-      if (currentWeapon === weapon.id) btn.classList.add('selected');
-      btn.innerHTML = `<div class="weapon-name">${weapon.name}</div><div class="weapon-damage">Damage: ${weaponInfo.base}-${weaponInfo.base + weaponInfo.max}</div>`;
-      btn.addEventListener('click', () => selectWeaponForBattle(weapon.id));
-      gridContainer.appendChild(btn);
-    });
-    
-    weaponSelector.style.display = 'block';
-  }
-
-  function selectWeaponForBattle(weaponId) {
-    currentWeapon = weaponId;
-    const weaponInfo = getWeaponDamage(weaponId);
-    
-    // Hide weapon selector
-    document.getElementById('weaponSelector').style.display = 'none';
-    
-    // Update battle log
-    addBattleLog(`Equipped: ${weaponInfo.name} (${weaponInfo.base}-${weaponInfo.base + weaponInfo.max} damage)`, 'normal');
-    addBattleLog('Ready for battle!', 'victory');
-    
-    // Enable attack button
     attackBtn.disabled = false;
     attackBtn.textContent = '⚡ Attack';
-    
-    buttonClickSound();
+    updateBattleUI();
   }
 
   function updateBattleUI() {
