@@ -469,8 +469,8 @@
     playSound(600, 0.1);
     console.log('Math overlay shown!');
     
-    // Start countdown timer
-    mathCountdownSeconds = 10;
+    // Start countdown timer (20 seconds for 5-7 age group, 10 for others)
+    mathCountdownSeconds = (ageGroup === '5-7') ? 20 : 10;
     mathTimerEl.textContent = `⏱️ ${mathCountdownSeconds}`;
     mathTimerEl.style.color = '#fff';
     
@@ -480,11 +480,14 @@
       mathCountdownSeconds--;
       mathTimerEl.textContent = `⏱️ ${mathCountdownSeconds}`;
       
-      // Change color when time is running out
-      if(mathCountdownSeconds <= 3) {
+      // Change color when time is running out (adjusted thresholds for longer timer)
+      const warningThreshold = (ageGroup === '5-7') ? 6 : 3;
+      const cautionThreshold = (ageGroup === '5-7') ? 10 : 5;
+      
+      if(mathCountdownSeconds <= warningThreshold) {
         mathTimerEl.style.color = '#ff4444';
         playSound(800, 0.05);
-      } else if(mathCountdownSeconds <= 5) {
+      } else if(mathCountdownSeconds <= cautionThreshold) {
         mathTimerEl.style.color = '#ffaa00';
       }
       
