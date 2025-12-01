@@ -169,6 +169,8 @@
   let bossHealth = 0;
   let playerHealth = 100;
   let battleInProgress = false;
+  let currentMathQuestion = null;
+  let waitingForAnswer = false;
 
   function startBossBattle(bossType) {
     // Check if boss is unlocked
@@ -230,19 +232,150 @@
     if (!weaponItem || !weaponItem.weapon) return { base: 15, max: 25, name: '👊 Fists', id: 'fists' };
     return { base: weaponItem.damage - 20, max: 30, name: weaponItem.name, id: weaponItem.id };
   }
-
+  
   function performAttack() {
-    if (!battleInProgress || !currentBattle) return;
+    console.log('performAttack called!', {battleInProgress, currentBattle, waitingForAnswer});
+    if (!battleInProgress || !currentBattle || waitingForAnswer) return;
     
     attackBtn.disabled = true;
-    attackBtn.textContent = '⏳ Attacking...';
+    attackBtn.textContent = '🧮 Solve...';
     
+    showMathQuestion();
+  }
+
+  function generateMathQuestion() {
+    const operations = ['+', '-', '×', '÷'];
+    const operation = operations[Math.floor(Math.random() * operations.length)];
+    let num1, num2, correctAnswer;
+    
+    const difficulty = Math.min(10, bossLevel + 1);
+    
+    switch(operation) {
+      case '+':
+        num1 = Math.floor(Math.random() * (10 + difficulty * 5)) + 1;
+        num2 = Math.floor(Math.random() * (10 + difficulty * 5)) + 1;
+        correctAnswer = num1 + num2;
+        break;
+      case '-':
+        num1 = Math.floor(Math.random() * (10 + difficulty * 5)) + 10;
+        num2 = Math.floor(Math.random() * num1) + 1;
+        correctAnswer = num1 - num2;
+        break;
+      case '×':
+        num1 = Math.floor(Math.random() * (5 + difficulty)) + 1;
+        num2 = Math.floor(Math.random() * (5 + difficulty)) + 1;
+        correctAnswer = num1 * num2;
+        break;
+      case '÷':
+        num2 = Math.floor(Math.random() * (5 + Math.floor(difficulty / 2))) + 2;
+        correctAnswer = Math.floor(Math.random() * (5 + difficulty)) + 1;
+        num1 = num2 * correctAnswer;
+        break;
+    }
+    
+    // Generate wrong answers
+    const wrongAnswers = new Set();
+    while(wrongAnswers.size < 3) {
+      let wrong;
+      if(operation === '÷') {
+        wrong = correctAnswer + Math.floor(Math.random() * 6) - 3;
+      } else {
+        const offset = Math.floor(Math.random() * 20) - 10;
+        wrong = correctAnswer + offset;
+      }
+      if(wrong !== correctAnswer && wrong > 0) {
+        wrongAnswers.add(wrong);
+      }
+    }
+    
+    const options = [correctAnswer, ...Array.from(wrongAnswers)];
+    // Shuffle options
+    for(let i = options.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [options[i], options[j]] = [options[j], options[i]];
+    }
+    
+    return { num1, num2, operation, correctAnswer, options };
+  }
+  
+  function showMathQuestion() {
+    console.log('showMathQuestion called!');
+    if(waitingForAnswer) return;
+    
+    waitingForAnswer = true;
+    currentMathQuestion = generateMathQuestion();
+    
+    const mathOverlay = document.getElementById('mathOverlay');
+    const mathQuestionEl = document.getElementById('mathQuestion');
+    const mathOptionsEl = document.getElementById('mathOptions');
+    
+    console.log('Elements:', {mathOverlay, mathQuestionEl, mathOptionsEl});
+    console.log('Question:', currentMathQuestion);
+    
+    mathQuestionEl.textContent = `${currentMathQuestion.num1} ${currentMathQuestion.operation} ${currentMathQuestion.num2} = ?`;
+    mathOptionsEl.innerHTML = '';
+    
+    currentMathQuestion.options.forEach(option => {
+      const btn = document.createElement('button');
+      btn.className = 'math-option';
+      btn.textContent = option;
+      btn.onclick = () => checkAnswer(option);
+      mathOptionsEl.appendChild(btn);
+    });
+    
+    mathOverlay.style.display = 'flex';
+    playSound(600, 0.1);
+    console.log('Math overlay shown!');
+  }
+  
+  function checkAnswer(selectedAnswer) {
+    const mathOverlay = document.getElementById('mathOverlay');
+    mathOverlay.style.display = 'none';
+    waitingForAnswer = false;
+    
+    if(selectedAnswer === currentMathQuestion.correctAnswer) {
+      // Correct! Execute attack
+      playSound(1200, 0.15);
+      executeAttack();
+    } else {
+      // Wrong! Player takes damage and no attack
+      playSound(300, 0.2);
+      playerHealth -= 15;
+      
+      if(playerHealth <= 0) {
+        endBattle(false);
+        return;
+      }
+      
+      updateBattleUI();
+      showToast(`❌ Wrong! Correct answer: ${currentMathQuestion.correctAnswer}`);
+      
+      // Boss attacks anyway
+      setTimeout(() => {
+        if(!battleInProgress) return;
+        const bossDamage = 15 + Math.floor(Math.random() * 25);
+        playerHealth -= bossDamage;
+        playSound(440, 0.2);
+        
+        if(playerHealth <= 0) {
+          endBattle(false);
+          return;
+        }
+        
+        updateBattleUI();
+        attackBtn.disabled = false;
+        attackBtn.textContent = '⚡ Attack';
+      }, 800);
+    }
+  }
+  
+  function executeAttack() {
     // Player attack with weapon
     const weaponInfo = getWeaponDamage();
     const playerDamage = weaponInfo.base + Math.floor(Math.random() * weaponInfo.max);
     bossHealth -= playerDamage;
     
-    addBattleLog(`You dealt ${playerDamage} damage with ${weaponInfo.name}!`, 'damage');
+    showToast(`✅ Correct! ${playerDamage} damage!`);
     playSound(880, 0.15);
     
     if (bossHealth <= 0) {
