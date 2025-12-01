@@ -63,15 +63,45 @@
   let highestCoinMilestone = parseInt(localStorage.getItem(HIGHEST_COIN_MILESTONE_KEY) || '0', 10);
   let comboTimeout = null;
 
-  const items = [
-    { id: 'boost-2x', name: '2x Booster (1min)', price: 300 },
-    { id: 'weapon-sword', name: '⚔️ Iron Sword', price: 5500, weapon: true, damage: 60, unlockBossLevel: 0 },
-    { id: 'weapon-axe', name: '🪓 Battle Axe', price: 6200, weapon: true, damage: 85, unlockBossLevel: 1 },
-    { id: 'weapon-lance', name: '🔱 Holy Lance', price: 7500, weapon: true, damage: 110, unlockBossLevel: 2 },
-    { id: 'weapon-katana', name: '🗡️ Shadow Katana', price: 9000, weapon: true, damage: 140, unlockBossLevel: 3 },
-    { id: 'weapon-hammer', name: '🔨 Thunder Hammer', price: 11000, weapon: true, damage: 175, unlockBossLevel: 4 },
-    { id: 'weapon-bow', name: '🏹 Dragon Bow', price: 13500, weapon: true, damage: 215, unlockBossLevel: 5 }
+  const baseItems = [
+    { id: 'boost-2x', name: '2x Booster (1min)', price: 300 }
   ];
+
+  // Infinite weapon generator
+  const weaponIcons = ['⚔️', '🗡️', '🪓', '🔱', '🔨', '🏹', '⚡', '🌟', '💎', '🔥', '❄️', '☄️', '🌙', '☀️', '🌊', '🌪️', '⚛️', '🎯', '💫', '✨'];
+  const weaponPrefixes = ['Iron', 'Steel', 'Silver', 'Golden', 'Diamond', 'Mythical', 'Legendary', 'Ancient', 'Divine', 'Cosmic', 'Infernal', 'Celestial', 'Ethereal', 'Quantum', 'Prismatic', 'Arcane', 'Spectral', 'Void', 'Omega', 'Alpha'];
+  const weaponTypes = ['Sword', 'Blade', 'Axe', 'Lance', 'Hammer', 'Bow', 'Staff', 'Spear', 'Scythe', 'Katana', 'Saber', 'Mace', 'Halberd', 'Glaive', 'Rapier', 'Claymore'];
+  
+  function generateWeapon(level) {
+    const icon = weaponIcons[level % weaponIcons.length];
+    const prefix = weaponPrefixes[Math.floor(level / weaponTypes.length) % weaponPrefixes.length];
+    const type = weaponTypes[level % weaponTypes.length];
+    const baseDamage = 50;
+    const damageIncrease = 30;
+    const damage = baseDamage + (level * damageIncrease);
+    const basePrice = 5000;
+    const priceMultiplier = 1.15;
+    const price = Math.floor(basePrice * Math.pow(priceMultiplier, level));
+    
+    return {
+      id: `weapon-${level}`,
+      name: `${icon} ${prefix} ${type}`,
+      price: price,
+      weapon: true,
+      damage: damage,
+      level: level
+    };
+  }
+  
+  function getItems() {
+    const items = [...baseItems];
+    // Generate weapons up to current progress + 1
+    const maxWeaponLevel = Math.max(bossLevel, purchasedItems.filter(id => id.startsWith('weapon-')).length);
+    for (let i = 0; i <= maxWeaponLevel; i++) {
+      items.push(generateWeapon(i));
+    }
+    return items;
+  }
 
   // Sound manager
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -174,6 +204,8 @@
   let battleInProgress = false;
   let currentMathQuestion = null;
   let waitingForAnswer = false;
+  let mathCountdownTimer = null;
+  let mathCountdownSeconds = 10;
 
   function startBossBattle(bossType) {
     // Check if boss is unlocked
@@ -231,6 +263,7 @@
 
   function getWeaponDamage(weaponId = null) {
     const weaponToUse = weaponId || currentWeapon;
+    const items = getItems();
     const weaponItem = items.find(it => it.id === weaponToUse);
     if (!weaponItem || !weaponItem.weapon) return { base: 15, max: 25, name: '👊 Fists', id: 'fists' };
     return { base: weaponItem.damage - 20, max: 30, name: weaponItem.name, id: weaponItem.id };
@@ -311,6 +344,7 @@
     const mathOverlay = document.getElementById('mathOverlay');
     const mathQuestionEl = document.getElementById('mathQuestion');
     const mathOptionsEl = document.getElementById('mathOptions');
+    const mathTimerEl = document.getElementById('mathTimer');
     
     console.log('Elements:', {mathOverlay, mathQuestionEl, mathOptionsEl});
     console.log('Question:', currentMathQuestion);
@@ -329,9 +363,52 @@
     mathOverlay.style.display = 'flex';
     playSound(600, 0.1);
     console.log('Math overlay shown!');
+    
+    // Start countdown timer
+    mathCountdownSeconds = 10;
+    mathTimerEl.textContent = `⏱️ ${mathCountdownSeconds}`;
+    mathTimerEl.style.color = '#fff';
+    
+    if(mathCountdownTimer) clearInterval(mathCountdownTimer);
+    
+    mathCountdownTimer = setInterval(() => {
+      mathCountdownSeconds--;
+      mathTimerEl.textContent = `⏱️ ${mathCountdownSeconds}`;
+      
+      // Change color when time is running out
+      if(mathCountdownSeconds <= 3) {
+        mathTimerEl.style.color = '#ff4444';
+        playSound(800, 0.05);
+      } else if(mathCountdownSeconds <= 5) {
+        mathTimerEl.style.color = '#ffaa00';
+      }
+      
+      // Time's up!
+      if(mathCountdownSeconds <= 0) {
+        clearInterval(mathCountdownTimer);
+        mathCountdownTimer = null;
+        handleTimeOut();
+      }
+    }, 1000);
+  }
+  
+  function handleTimeOut() {
+    const mathOverlay = document.getElementById('mathOverlay');
+    mathOverlay.style.display = 'none';
+    waitingForAnswer = false;
+    
+    // Time out = player loses immediately
+    playSound(200, 0.3);
+    showToast(`⏰ Time's up! You lose!`);
+    endBattle(false);
   }
   
   function checkAnswer(selectedAnswer) {
+    if(mathCountdownTimer) {
+      clearInterval(mathCountdownTimer);
+      mathCountdownTimer = null;
+    }
+    
     const mathOverlay = document.getElementById('mathOverlay');
     mathOverlay.style.display = 'none';
     waitingForAnswer = false;
@@ -857,6 +934,8 @@
   function renderItems() { 
     itemsEl.innerHTML = '';
     
+    const items = getItems();
+    
     // Find the first unpurchased weapon
     const weapons = items.filter(it => it.weapon);
     let nextWeaponToShow = null;
@@ -903,21 +982,17 @@
       
       const isEquipped = isWeapon && currentWeapon === it.id;
       
-      // For weapons, check if unlocked based on boss level
-      const weaponUnlocked = !isWeapon || (it.unlockBossLevel !== undefined && totalEarned >= it.unlockBossLevel * 5000);
+      // For weapons, always unlocked (progression based on purchasing previous weapons)
+      const weaponUnlocked = true;
       
       let btnText = 'Buy';
       let priceText = it.price;
       let lockReason = '';
       
       if (isWeapon) {
-        if (!weaponUnlocked) {
-          const requiredCoins = it.unlockBossLevel * 5000;
-          lockReason = ` (Unlocks at ${requiredCoins} coins)`;
-          btnText = '🔒 Locked';
-        } else {
-          btnText = balance < it.price ? '💰 Need More Coins' : 'Buy';
-        }
+        const weaponLevel = it.level || 0;
+        lockReason = ` | Lv.${weaponLevel} | +${it.damage} DMG`;
+        btnText = balance < it.price ? '💰 Need More Coins' : 'Buy';
       }
       
       div.innerHTML = `<div class="meta"><strong>${it.name}</strong><div style="opacity:.8">${priceText} coins${lockReason}</div></div>`;
