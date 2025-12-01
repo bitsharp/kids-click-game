@@ -22,7 +22,10 @@
   const tapCoinsEl = document.getElementById('tapCoins');
   const itemsEl = document.getElementById('items');
   const toast = document.getElementById('toast');
-  const resetBtn = document.getElementById('resetBtn');
+  const menuBtn = document.getElementById('menuBtn');
+  const dropdownMenu = document.getElementById('dropdownMenu');
+  const openShopMenu = document.getElementById('openShopMenu');
+  const resetBtnMenu = document.getElementById('resetBtnMenu');
   const battleResultModal = document.getElementById('battleResultModal');
   const resultContent = document.getElementById('resultContent');
   const resultCloseBtn = document.getElementById('resultCloseBtn');
@@ -778,8 +781,31 @@
     }, 800);
   });
 
-  // Reset button
-  resetBtn.addEventListener('click', () => {
+  // Menu button toggle
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = dropdownMenu.style.display === 'block';
+    dropdownMenu.style.display = isVisible ? 'none' : 'block';
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!dropdownMenu.contains(e.target) && e.target !== menuBtn) {
+      dropdownMenu.style.display = 'none';
+    }
+  });
+
+  // Open shop menu item
+  openShopMenu.addEventListener('click', () => {
+    dropdownMenu.style.display = 'none';
+    const storeEl = document.querySelector('.store');
+    storeEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showToast('🏪 Shop opened!');
+  });
+
+  // Reset button from menu
+  resetBtnMenu.addEventListener('click', () => {
+    dropdownMenu.style.display = 'none';
     if (confirm('Are you sure you want to reset the game? All coins and skins will be lost!')) {
       // Clear all localStorage
       localStorage.removeItem(STORAGE_KEY);

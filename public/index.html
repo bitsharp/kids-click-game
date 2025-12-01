@@ -11,7 +11,14 @@
   <header class="topbar">
     <div class="logo">☀️ Sunny Coins</div>
     <div class="balance"><span class="coin-icon">🪙</span> <span id="coinCount">0</span></div>
+    <button id="menuBtn" class="menu-btn" aria-label="Menu">☰</button>
   </header>
+
+  <!-- Dropdown Menu -->
+  <div id="dropdownMenu" class="dropdown-menu" style="display:none">
+    <button id="openShopMenu" class="menu-item">🛍️ Open Shop</button>
+    <button id="resetBtnMenu" class="menu-item">🔄 Reset Game</button>
+  </div>
 
   <div class="particles" id="particles"></div>
 
@@ -40,8 +47,6 @@
       <h2>🏪 Store</h2>
       <div id="items" class="items"></div>
       <button id="challengeBossBtn" class="challenge-boss-btn">⚔️ Challenge Boss</button>
-      <button id="openShop" class="shop-btn">🛍️ Open Shop</button>
-      <button id="resetBtn" class="reset-btn">🔄 Reset Game</button>
     </aside>
   </main>
 
@@ -102,6 +107,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
